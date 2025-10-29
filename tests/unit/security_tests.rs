@@ -1,35 +1,39 @@
 //! Security module tests
 
 use multigit::security::audit::{AuditEntry, AuditEventType, AuditLogger};
-use multigit::security::encryption::{encrypt_string, decrypt_string};
+use multigit::security::encryption::{decrypt_string, encrypt_string};
 use multigit::security::keyring::KeyringManager;
 use std::path::PathBuf;
 
 #[test]
 fn test_audit_entry_creation() {
     let entry = AuditEntry::new(AuditEventType::CredentialStore, "test action", true);
-    assert_eq!(std::mem::discriminant(&entry.event_type), std::mem::discriminant(&AuditEventType::CredentialStore));
+    assert_eq!(
+        std::mem::discriminant(&entry.event_type),
+        std::mem::discriminant(&AuditEventType::CredentialStore)
+    );
     assert!(entry.success);
 }
 
 #[test]
 fn test_audit_entry_with_message() {
-    let entry = AuditEntry::new(AuditEventType::Push, "action", true)
-        .with_message("test message");
+    let entry = AuditEntry::new(AuditEventType::Push, "action", true).with_message("test message");
     assert_eq!(entry.message, Some("test message".to_string()));
 }
 
 #[test]
 fn test_audit_entry_with_user() {
-    let entry = AuditEntry::new(AuditEventType::Pull, "action", true)
-        .with_user("testuser");
+    let entry = AuditEntry::new(AuditEventType::Pull, "action", true).with_user("testuser");
     assert_eq!(entry.user, Some("testuser".to_string()));
 }
 
 #[test]
 fn test_audit_logger_creation() {
     let logger = AuditLogger::new(PathBuf::from("/tmp/audit.log"), true);
-    assert_eq!(std::mem::size_of_val(&logger), std::mem::size_of::<AuditLogger>());
+    assert_eq!(
+        std::mem::size_of_val(&logger),
+        std::mem::size_of::<AuditLogger>()
+    );
 }
 
 #[test]
@@ -40,18 +44,24 @@ fn test_audit_logger_default_path() {
 
 #[test]
 fn test_audit_event_types() {
-    assert_eq!(std::mem::discriminant(&AuditEventType::Push), std::mem::discriminant(&AuditEventType::Push));
-    assert_ne!(std::mem::discriminant(&AuditEventType::Push), std::mem::discriminant(&AuditEventType::Pull));
+    assert_eq!(
+        std::mem::discriminant(&AuditEventType::Push),
+        std::mem::discriminant(&AuditEventType::Push)
+    );
+    assert_ne!(
+        std::mem::discriminant(&AuditEventType::Push),
+        std::mem::discriminant(&AuditEventType::Pull)
+    );
 }
 
 #[test]
 fn test_encrypt_decrypt_roundtrip() {
     let original = "secret data";
     let passphrase = "strong_password";
-    
+
     let encrypted = encrypt_string(original, passphrase).unwrap();
     let decrypted = decrypt_string(&encrypted, passphrase).unwrap();
-    
+
     assert_eq!(original, decrypted);
 }
 
@@ -59,10 +69,10 @@ fn test_encrypt_decrypt_roundtrip() {
 fn test_encrypt_produces_different_output() {
     let data = "secret";
     let passphrase = "pass";
-    
+
     let encrypted1 = encrypt_string(data, passphrase).unwrap();
     let encrypted2 = encrypt_string(data, passphrase).unwrap();
-    
+
     // Should produce different ciphertexts (due to salt/nonce)
     assert_ne!(encrypted1, encrypted2);
 }
@@ -71,7 +81,7 @@ fn test_encrypt_produces_different_output() {
 fn test_decrypt_wrong_passphrase() {
     let data = "secret";
     let encrypted = encrypt_string(data, "correct_pass").unwrap();
-    
+
     let result = decrypt_string(&encrypted, "wrong_pass");
     assert!(result.is_err());
 }
@@ -85,14 +95,17 @@ fn test_decrypt_invalid_base64() {
 #[test]
 fn test_keyring_manager_creation() {
     let manager = KeyringManager::new();
-    assert_eq!(std::mem::size_of_val(&manager), std::mem::size_of::<KeyringManager>());
+    assert_eq!(
+        std::mem::size_of_val(&manager),
+        std::mem::size_of::<KeyringManager>()
+    );
 }
 
 #[test]
 fn test_keyring_token_key() {
     let key1 = KeyringManager::token_key("github");
     let key2 = KeyringManager::token_key("gitlab");
-    
+
     assert_ne!(key1, key2);
     assert!(key1.contains("github"));
 }
@@ -102,7 +115,7 @@ fn test_audit_entry_builder_pattern() {
     let entry = AuditEntry::new(AuditEventType::Push, "pushed to remote", true)
         .with_user("testuser")
         .with_message("Pushed 5 commits");
-    
+
     assert_eq!(entry.user, Some("testuser".to_string()));
     assert_eq!(entry.message, Some("Pushed 5 commits".to_string()));
 }

@@ -1,6 +1,6 @@
 //! UI module tests
 
-use multigit::ui::formatter::{Table, Status, colors, format_duration, format_bytes};
+use multigit::ui::formatter::{colors, format_bytes, format_duration, Status, Table};
 
 #[test]
 fn test_table_creation() {
@@ -129,4 +129,3 @@ fn test_format_bytes_mb() {
     let formatted = format_bytes(1_048_576);
     assert_eq!(formatted, "1.00 MB");
 }
-

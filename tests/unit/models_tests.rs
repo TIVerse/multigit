@@ -1,9 +1,9 @@
 //! Models tests
 
-use multigit::models::remote::{Remote, ProviderType, RateLimit};
-use multigit::models::repository::Repository;
-use multigit::models::config::{Settings, SyncConfig, SyncStrategy, AuthBackend};
 use chrono::Utc;
+use multigit::models::config::{AuthBackend, Settings, SyncConfig, SyncStrategy};
+use multigit::models::remote::{ProviderType, RateLimit, Remote};
+use multigit::models::repository::Repository;
 
 #[test]
 fn test_remote_builder() {
@@ -11,7 +11,7 @@ fn test_remote_builder() {
         .with_ssh()
         .with_priority(10)
         .build();
-    
+
     assert_eq!(remote.name, "github");
     assert_eq!(remote.username, "testuser");
     assert!(remote.use_ssh);
@@ -20,10 +20,8 @@ fn test_remote_builder() {
 
 #[test]
 fn test_remote_disabled() {
-    let remote = Remote::builder("gitlab", "user")
-        .disabled()
-        .build();
-    
+    let remote = Remote::builder("gitlab", "user").disabled().build();
+
     assert!(!remote.enabled);
 }
 
@@ -37,7 +35,10 @@ fn test_git_remote_name() {
 fn test_provider_type_parsing() {
     assert!(matches!(ProviderType::from("github"), ProviderType::GitHub));
     assert!(matches!(ProviderType::from("gitlab"), ProviderType::GitLab));
-    assert!(matches!(ProviderType::from("bitbucket"), ProviderType::Bitbucket));
+    assert!(matches!(
+        ProviderType::from("bitbucket"),
+        ProviderType::Bitbucket
+    ));
 }
 
 #[test]
@@ -50,8 +51,14 @@ fn test_provider_display_names() {
 
 #[test]
 fn test_provider_api_urls() {
-    assert_eq!(ProviderType::GitHub.default_api_url(), "https://api.github.com");
-    assert_eq!(ProviderType::GitLab.default_api_url(), "https://gitlab.com/api/v4");
+    assert_eq!(
+        ProviderType::GitHub.default_api_url(),
+        "https://api.github.com"
+    );
+    assert_eq!(
+        ProviderType::GitLab.default_api_url(),
+        "https://gitlab.com/api/v4"
+    );
 }
 
 #[test]
@@ -81,7 +88,7 @@ fn test_rate_limit_is_low() {
         remaining: 100,
         reset_at: Utc::now() + chrono::Duration::hours(1),
     };
-    
+
     assert!(limit.is_low());
 }
 
@@ -92,7 +99,7 @@ fn test_rate_limit_is_exceeded() {
         remaining: 0,
         reset_at: Utc::now() + chrono::Duration::hours(1),
     };
-    
+
     assert!(limit.is_exceeded());
 }
 
@@ -103,7 +110,7 @@ fn test_rate_limit_time_until_reset() {
         remaining: 1000,
         reset_at: Utc::now() + chrono::Duration::hours(1),
     };
-    
+
     let duration = limit.time_until_reset();
     assert!(duration.num_seconds() > 0);
 }
@@ -120,7 +127,7 @@ fn test_repository_builder() {
     let repo = Repository::builder("/path/to/repo")
         .with_remote(Remote::builder("origin", "user").build())
         .build();
-    
+
     assert_eq!(repo.path, "/path/to/repo");
     assert_eq!(repo.remotes.len(), 1);
 }
@@ -149,7 +156,7 @@ fn test_sync_strategy_display() {
 
 #[test]
 fn test_auth_backend_variants() {
-    // Verify AuthBackend enum variants exist  
+    // Verify AuthBackend enum variants exist
     let _keyring = AuthBackend::Keyring;
     let _file = AuthBackend::EncryptedFile;
     let _env = AuthBackend::Environment;
@@ -166,7 +173,7 @@ fn test_remote_creation() {
         use_ssh: false,
         priority: 0,
     };
-    
+
     assert_eq!(remote.name, "origin");
     assert!(remote.enabled);
 }

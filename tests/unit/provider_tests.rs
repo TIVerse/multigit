@@ -1,8 +1,8 @@
 //! Provider module tests
 
 use multigit::models::remote::ProviderType;
-use multigit::providers::traits::{Protocol, Provider};
 use multigit::providers::github::GitHubProvider;
+use multigit::providers::traits::{Protocol, Provider};
 
 #[test]
 fn test_github_provider_creation() {
@@ -28,10 +28,19 @@ fn test_github_ssh_url() {
 fn test_provider_type_parsing() {
     assert!(matches!(ProviderType::from("github"), ProviderType::GitHub));
     assert!(matches!(ProviderType::from("gitlab"), ProviderType::GitLab));
-    assert!(matches!(ProviderType::from("bitbucket"), ProviderType::Bitbucket));
+    assert!(matches!(
+        ProviderType::from("bitbucket"),
+        ProviderType::Bitbucket
+    ));
     assert!(matches!(ProviderType::from("gitea"), ProviderType::Gitea));
-    assert!(matches!(ProviderType::from("forgejo"), ProviderType::Forgejo));
-    assert!(matches!(ProviderType::from("codeberg"), ProviderType::Codeberg));
+    assert!(matches!(
+        ProviderType::from("forgejo"),
+        ProviderType::Forgejo
+    ));
+    assert!(matches!(
+        ProviderType::from("codeberg"),
+        ProviderType::Codeberg
+    ));
 }
 
 #[test]
@@ -46,9 +55,18 @@ fn test_provider_type_display() {
 
 #[test]
 fn test_provider_default_api_urls() {
-    assert_eq!(ProviderType::GitHub.default_api_url(), "https://api.github.com");
-    assert_eq!(ProviderType::GitLab.default_api_url(), "https://gitlab.com/api/v4");
-    assert_eq!(ProviderType::Bitbucket.default_api_url(), "https://api.bitbucket.org/2.0");
+    assert_eq!(
+        ProviderType::GitHub.default_api_url(),
+        "https://api.github.com"
+    );
+    assert_eq!(
+        ProviderType::GitLab.default_api_url(),
+        "https://gitlab.com/api/v4"
+    );
+    assert_eq!(
+        ProviderType::Bitbucket.default_api_url(),
+        "https://api.bitbucket.org/2.0"
+    );
 }
 
 #[test]
@@ -64,10 +82,10 @@ fn test_self_hosted_providers() {
 fn test_https_url_templates() {
     let github_url = ProviderType::GitHub.https_url_template("user", "repo", None);
     assert_eq!(github_url, "https://github.com/user/repo.git");
-    
+
     let gitlab_url = ProviderType::GitLab.https_url_template("user", "repo", None);
     assert_eq!(gitlab_url, "https://gitlab.com/user/repo.git");
-    
+
     let bitbucket_url = ProviderType::Bitbucket.https_url_template("user", "repo", None);
     assert_eq!(bitbucket_url, "https://bitbucket.org/user/repo.git");
 }
@@ -76,19 +94,21 @@ fn test_https_url_templates() {
 fn test_ssh_url_templates() {
     let github_url = ProviderType::GitHub.ssh_url_template("user", "repo", None);
     assert_eq!(github_url, "git@github.com:user/repo.git");
-    
+
     let gitlab_url = ProviderType::GitLab.ssh_url_template("user", "repo", None);
     assert_eq!(gitlab_url, "git@gitlab.com:user/repo.git");
-    
+
     let bitbucket_url = ProviderType::Bitbucket.ssh_url_template("user", "repo", None);
     assert_eq!(bitbucket_url, "git@bitbucket.org:user/repo.git");
 }
 
 #[test]
 fn test_self_hosted_urls() {
-    let gitea_https = ProviderType::Gitea.https_url_template("user", "repo", Some("https://git.example.com"));
+    let gitea_https =
+        ProviderType::Gitea.https_url_template("user", "repo", Some("https://git.example.com"));
     assert_eq!(gitea_https, "https://git.example.com/user/repo.git");
-    
-    let gitea_ssh = ProviderType::Gitea.ssh_url_template("user", "repo", Some("https://git.example.com"));
+
+    let gitea_ssh =
+        ProviderType::Gitea.ssh_url_template("user", "repo", Some("https://git.example.com"));
     assert_eq!(gitea_ssh, "git@git.example.com:user/repo.git");
 }

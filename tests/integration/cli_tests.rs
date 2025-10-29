@@ -1,8 +1,8 @@
 //! CLI integration tests
 
+use git2::Repository;
 use multigit::core::config::Config;
 use tempfile::TempDir;
-use git2::Repository;
 
 #[test]
 fn test_cli_parser_creation() {
@@ -27,7 +27,7 @@ fn test_config_initialization() {
 fn test_repository_detection() {
     let temp_dir = TempDir::new().unwrap();
     let _repo = Repository::init(temp_dir.path()).unwrap();
-    
+
     // Verify .git directory exists
     assert!(temp_dir.path().join(".git").exists());
 }
@@ -35,9 +35,9 @@ fn test_repository_detection() {
 #[test]
 fn test_config_remote_management() {
     use multigit::core::config::RemoteConfig;
-    
+
     let mut config = Config::default();
-    
+
     let remote = RemoteConfig {
         username: "testuser".to_string(),
         api_url: None,
@@ -46,10 +46,10 @@ fn test_config_remote_management() {
         use_ssh: false,
         priority: 0,
     };
-    
+
     config.add_remote("github".to_string(), remote);
     assert_eq!(config.remotes.len(), 1);
-    
+
     config.remove_remote("github");
     assert_eq!(config.remotes.len(), 0);
 }
@@ -57,27 +57,33 @@ fn test_config_remote_management() {
 #[test]
 fn test_enabled_remotes_filter() {
     use multigit::core::config::RemoteConfig;
-    
+
     let mut config = Config::default();
-    
-    config.add_remote("github".to_string(), RemoteConfig {
-        username: "user".to_string(),
-        api_url: None,
-        enabled: true,
-        provider: Some("github".to_string()),
-        use_ssh: false,
-        priority: 0,
-    });
-    
-    config.add_remote("gitlab".to_string(), RemoteConfig {
-        username: "user".to_string(),
-        api_url: None,
-        enabled: false,
-        provider: Some("gitlab".to_string()),
-        use_ssh: false,
-        priority: 0,
-    });
-    
+
+    config.add_remote(
+        "github".to_string(),
+        RemoteConfig {
+            username: "user".to_string(),
+            api_url: None,
+            enabled: true,
+            provider: Some("github".to_string()),
+            use_ssh: false,
+            priority: 0,
+        },
+    );
+
+    config.add_remote(
+        "gitlab".to_string(),
+        RemoteConfig {
+            username: "user".to_string(),
+            api_url: None,
+            enabled: false,
+            provider: Some("gitlab".to_string()),
+            use_ssh: false,
+            priority: 0,
+        },
+    );
+
     let enabled = config.enabled_remotes();
     assert_eq!(enabled.len(), 1);
     assert!(enabled.contains_key("github"));
@@ -86,22 +92,25 @@ fn test_enabled_remotes_filter() {
 #[test]
 fn test_conflict_resolver_creation() {
     use multigit::core::conflict_resolver::{ConflictResolver, ResolutionStrategy};
-    
+
     let resolver = ConflictResolver::new(ResolutionStrategy::FastForwardOnly);
-    assert_eq!(std::mem::size_of_val(&resolver), std::mem::size_of::<ConflictResolver>());
+    assert_eq!(
+        std::mem::size_of_val(&resolver),
+        std::mem::size_of::<ConflictResolver>()
+    );
 }
 
 #[test]
 fn test_conflict_detection() {
     use multigit::core::conflict_resolver::ConflictResolver;
     use multigit::core::conflict_resolver::ResolutionStrategy;
-    
+
     let resolver = ConflictResolver::new(ResolutionStrategy::Manual);
-    
+
     // Test diverged state (ahead and behind)
     let conflict = resolver.detect_conflict(5, 3);
     assert!(conflict.is_some());
-    
+
     // Test no conflict
     let no_conflict = resolver.detect_conflict(0, 0);
     assert!(no_conflict.is_none());
@@ -110,9 +119,9 @@ fn test_conflict_detection() {
 #[test]
 fn test_auto_resolve_capability() {
     use multigit::core::conflict_resolver::{Conflict, ConflictResolver, ResolutionStrategy};
-    
+
     let resolver = ConflictResolver::new(ResolutionStrategy::FastForwardOnly);
-    
+
     // Ahead only - can fast forward
     let conflict = Conflict {
         branch: "main".to_string(),
@@ -121,7 +130,7 @@ fn test_auto_resolve_capability() {
         diverged: false,
     };
     assert!(resolver.can_auto_resolve(&conflict));
-    
+
     // Diverged - cannot fast forward
     let diverged = Conflict {
         branch: "main".to_string(),
@@ -136,7 +145,7 @@ fn test_auto_resolve_capability() {
 fn test_health_checker_creation() {
     let temp_dir = TempDir::new().unwrap();
     let _repo = Repository::init(temp_dir.path()).unwrap();
-    
+
     use multigit::core::health_checker::HealthChecker;
     let checker = HealthChecker::new(temp_dir.path().to_path_buf());
     assert!(checker.is_ok());
@@ -146,7 +155,7 @@ fn test_health_checker_creation() {
 fn test_health_check_execution() {
     let temp_dir = TempDir::new().unwrap();
     let repo = Repository::init(temp_dir.path()).unwrap();
-    
+
     // Create initial commit
     let sig = git2::Signature::now("Test", "test@example.com").unwrap();
     let tree_id = {
@@ -154,12 +163,13 @@ fn test_health_check_execution() {
         index.write_tree().unwrap()
     };
     let tree = repo.find_tree(tree_id).unwrap();
-    repo.commit(Some("HEAD"), &sig, &sig, "Initial", &tree, &[]).unwrap();
-    
+    repo.commit(Some("HEAD"), &sig, &sig, "Initial", &tree, &[])
+        .unwrap();
+
     use multigit::core::health_checker::HealthChecker;
     let checker = HealthChecker::new(temp_dir.path().to_path_buf()).unwrap();
     let _report = checker.check();
-    
+
     // Health check completed
 }
 
@@ -167,7 +177,7 @@ fn test_health_check_execution() {
 fn test_is_healthy() {
     let temp_dir = TempDir::new().unwrap();
     let repo = Repository::init(temp_dir.path()).unwrap();
-    
+
     // Create initial commit
     let sig = git2::Signature::now("Test", "test@example.com").unwrap();
     let tree_id = {
@@ -175,11 +185,12 @@ fn test_is_healthy() {
         index.write_tree().unwrap()
     };
     let tree = repo.find_tree(tree_id).unwrap();
-    repo.commit(Some("HEAD"), &sig, &sig, "Initial", &tree, &[]).unwrap();
-    
+    repo.commit(Some("HEAD"), &sig, &sig, "Initial", &tree, &[])
+        .unwrap();
+
     use multigit::core::health_checker::HealthChecker;
     let checker = HealthChecker::new(temp_dir.path().to_path_buf()).unwrap();
-    
+
     // Should be healthy for a fresh repo
     let is_healthy = checker.is_healthy();
     assert!(is_healthy);
