@@ -28,7 +28,7 @@ pub fn execute(verbose: bool) -> Result<()> {
     println!("\nRemote status:");
     let config = Config::load().unwrap_or_default();
     let remotes = config.enabled_remotes();
-    
+
     if remotes.is_empty() {
         println!("  No remotes configured.");
         println!("  Configure remotes with: multigit remote add");

@@ -69,11 +69,9 @@ impl DaemonService {
         let scheduler = Scheduler::new(self.interval_seconds);
 
         // Define the sync task
-        let sync_task = || {
-            async move {
-                info!("[Daemon] Running scheduled sync...");
-                perform_sync().await
-            }
+        let sync_task = || async move {
+            info!("[Daemon] Running scheduled sync...");
+            perform_sync().await
         };
 
         // Run the scheduler
@@ -256,7 +254,8 @@ async fn perform_sync() -> std::result::Result<(), Box<dyn std::error::Error + S
     debug!("Performing background sync check...");
 
     // Load config
-    let config = Config::load().map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+    let config =
+        Config::load().map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
 
     // Get enabled remotes
     let enabled: Vec<String> = config.enabled_remotes().keys().cloned().collect();
@@ -265,7 +264,11 @@ async fn perform_sync() -> std::result::Result<(), Box<dyn std::error::Error + S
         return Ok(());
     }
 
-    info!("[Daemon] Would sync with {} enabled remotes: {:?}", enabled.len(), enabled);
+    info!(
+        "[Daemon] Would sync with {} enabled remotes: {:?}",
+        enabled.len(),
+        enabled
+    );
     info!("[Daemon] To enable full sync in daemon mode, run: multigit sync");
     info!("[Daemon] Or set up a cron job: */5 * * * * cd /path/to/repo && multigit sync");
 

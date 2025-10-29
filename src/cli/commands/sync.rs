@@ -29,7 +29,7 @@ pub async fn execute(branch: Option<String>, dry_run: bool) -> Result<()> {
     // Load configured remotes from config
     let config = Config::load().unwrap_or_default();
     let enabled: Vec<String> = config.enabled_remotes().keys().cloned().collect();
-    
+
     if enabled.is_empty() {
         println!("⚠ No remotes configured yet.");
         println!("Use 'multigit remote add' to configure remotes.");
@@ -39,7 +39,11 @@ pub async fn execute(branch: Option<String>, dry_run: bool) -> Result<()> {
     }
 
     if dry_run {
-        println!("\n[DRY RUN] Would sync branch '{}' with {} remote(s):", branch_name, enabled.len());
+        println!(
+            "\n[DRY RUN] Would sync branch '{}' with {} remote(s):",
+            branch_name,
+            enabled.len()
+        );
         for remote in &enabled {
             println!("  - {}", remote);
         }
@@ -47,7 +51,11 @@ pub async fn execute(branch: Option<String>, dry_run: bool) -> Result<()> {
         return Ok(());
     }
 
-    println!("\n🔄 Syncing branch '{}' with {} remote(s)...\n", branch_name, enabled.len());
+    println!(
+        "\n🔄 Syncing branch '{}' with {} remote(s)...\n",
+        branch_name,
+        enabled.len()
+    );
 
     // Fetch from all remotes
     println!("📥 Fetching updates...");
