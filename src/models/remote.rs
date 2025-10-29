@@ -60,28 +60,28 @@ impl Remote {
     }
 
     /// Enable SSH protocol
-    #[must_use] 
+    #[must_use]
     pub fn with_ssh(mut self) -> Self {
         self.use_ssh = true;
         self
     }
 
     /// Set priority for conflict resolution
-    #[must_use] 
+    #[must_use]
     pub fn with_priority(mut self, priority: i32) -> Self {
         self.priority = priority;
         self
     }
 
     /// Disable this remote
-    #[must_use] 
+    #[must_use]
     pub fn disabled(mut self) -> Self {
         self.enabled = false;
         self
     }
 
     /// Get the Git remote name (e.g., "multigit-github")
-    #[must_use] 
+    #[must_use]
     pub fn git_remote_name(&self) -> String {
         format!("multigit-{}", self.name)
     }
@@ -107,7 +107,7 @@ pub enum ProviderType {
 
 impl ProviderType {
     /// Get the default API URL for this provider
-    #[must_use] 
+    #[must_use]
     pub fn default_api_url(&self) -> &'static str {
         match self {
             Self::GitHub => "https://api.github.com",
@@ -120,7 +120,7 @@ impl ProviderType {
     }
 
     /// Get the display name for this provider
-    #[must_use] 
+    #[must_use]
     pub fn display_name(&self) -> &'static str {
         match self {
             Self::GitHub => "GitHub",
@@ -133,13 +133,13 @@ impl ProviderType {
     }
 
     /// Check if this is a self-hosted provider type
-    #[must_use] 
+    #[must_use]
     pub fn is_self_hosted(&self) -> bool {
         matches!(self, Self::Gitea | Self::Forgejo)
     }
 
     /// Get the HTTPS clone URL template
-    #[must_use] 
+    #[must_use]
     pub fn https_url_template(&self, username: &str, repo: &str, api_url: Option<&str>) -> String {
         match self {
             Self::GitHub => format!("https://github.com/{username}/{repo}.git"),
@@ -154,7 +154,7 @@ impl ProviderType {
     }
 
     /// Get the SSH clone URL template
-    #[must_use] 
+    #[must_use]
     pub fn ssh_url_template(&self, username: &str, repo: &str, api_url: Option<&str>) -> String {
         match self {
             Self::GitHub => format!("git@github.com:{username}/{repo}.git"),
@@ -229,19 +229,19 @@ pub struct RateLimit {
 
 impl RateLimit {
     /// Check if we're close to hitting the rate limit (< 10% remaining)
-    #[must_use] 
+    #[must_use]
     pub fn is_low(&self) -> bool {
         self.remaining < (self.limit / 10)
     }
 
     /// Check if the rate limit has been exceeded
-    #[must_use] 
+    #[must_use]
     pub fn is_exceeded(&self) -> bool {
         self.remaining == 0
     }
 
     /// Get the duration until the rate limit resets
-    #[must_use] 
+    #[must_use]
     pub fn time_until_reset(&self) -> chrono::Duration {
         self.reset_at - chrono::Utc::now()
     }

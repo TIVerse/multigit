@@ -22,7 +22,7 @@ pub enum MultiGitError {
         /// Provider name
         provider: String,
         /// Reason for failure
-        reason: String
+        reason: String,
     },
 
     /// Repository not found
@@ -43,7 +43,7 @@ pub enum MultiGitError {
         /// Provider name
         provider: String,
         /// Minutes until reset
-        minutes: u32
+        minutes: u32,
     },
 
     /// Configuration error
@@ -80,7 +80,7 @@ pub enum MultiGitError {
         /// Provider name
         provider: String,
         /// Error message
-        message: String
+        message: String,
     },
 
     /// Daemon error
@@ -156,7 +156,7 @@ impl MultiGitError {
     }
 
     /// Get a user-friendly error message with troubleshooting hints
-    #[must_use] 
+    #[must_use]
     pub fn user_message(&self) -> String {
         match self {
             Self::AuthError { provider, reason } => {
@@ -200,13 +200,13 @@ impl MultiGitError {
     }
 
     /// Check if this error is retryable
-    #[must_use] 
+    #[must_use]
     pub fn is_retryable(&self) -> bool {
         matches!(self, Self::NetworkError(_) | Self::RateLimitError { .. })
     }
 
     /// Check if this is a authentication-related error
-    #[must_use] 
+    #[must_use]
     pub fn is_auth_error(&self) -> bool {
         matches!(self, Self::AuthError { .. } | Self::KeyringError(_))
     }

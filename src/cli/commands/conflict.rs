@@ -30,9 +30,7 @@ pub fn detect_conflicts() -> Result<()> {
     let current_branch = git_ops.get_current_branch()?;
     info!("Checking branch: {}", current_branch);
 
-    println!(
-        "\n🔍 Checking for conflicts on branch '{current_branch}'...\n"
-    );
+    println!("\n🔍 Checking for conflicts on branch '{current_branch}'...\n");
 
     let mut conflicts_found = false;
     let mut remote_states = Vec::new();
@@ -127,9 +125,7 @@ pub fn resolve_conflicts(strategy: ResolutionStrategy) -> Result<()> {
     let git_ops = GitOperations::new(repo_path)?;
     let current_branch = git_ops.get_current_branch()?;
 
-    println!(
-        "\n🔧 Resolving conflicts on branch '{current_branch}'...\n"
-    );
+    println!("\n🔧 Resolving conflicts on branch '{current_branch}'...\n");
 
     // Detect conflicts first
     let mut conflicts = Vec::new();
@@ -236,9 +232,7 @@ pub fn set_primary_remote(remote_name: String) -> Result<()> {
         "Primary remote set to '{remote_lower}' for conflict resolution"
     ));
 
-    println!(
-        "\nWhen conflicts occur, changes from '{remote_lower}' will be preferred."
-    );
+    println!("\nWhen conflicts occur, changes from '{remote_lower}' will be preferred.");
 
     Ok(())
 }

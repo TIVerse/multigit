@@ -126,7 +126,7 @@ impl HealthChecker {
     }
 
     /// Quick check - returns true if everything is OK
-    #[must_use] 
+    #[must_use]
     pub fn is_healthy(&self) -> bool {
         let report = self.check();
         report.issues.is_empty()

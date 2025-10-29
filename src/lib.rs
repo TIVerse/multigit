@@ -31,6 +31,17 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::missing_panics_doc)]
+#![allow(clippy::needless_pass_by_value)]
+#![allow(clippy::match_same_arms)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::manual_let_else)]
+#![allow(clippy::unused_self)]
+#![allow(clippy::return_self_not_must_use)]
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::struct_excessive_bools)]
+#![allow(clippy::match_wildcard_for_single_variants)]
+#![allow(clippy::items_after_statements)]
 
 /// API client utilities for provider communication
 pub mod api;
@@ -74,7 +85,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const NAME: &str = env!("CARGO_PKG_NAME");
 
 /// Get the full version string
-#[must_use] 
+#[must_use]
 pub fn version() -> String {
     format!("{NAME} v{VERSION}")
 }

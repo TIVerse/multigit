@@ -15,7 +15,7 @@ pub struct MultiRemoteProgress {
 
 impl MultiRemoteProgress {
     /// Create a new multi-remote progress tracker
-    #[must_use] 
+    #[must_use]
     pub fn new(remote_names: &[String]) -> Self {
         let multi = Arc::new(MultiProgress::new());
         let mut bars = Vec::new();
@@ -60,7 +60,7 @@ impl MultiRemoteProgress {
     }
 
     /// Get the underlying `MultiProgress` for custom additions
-    #[must_use] 
+    #[must_use]
     pub fn multi(&self) -> Arc<MultiProgress> {
         self.multi.clone()
     }
@@ -73,7 +73,7 @@ pub struct Spinner {
 
 impl Spinner {
     /// Create a new spinner with a message
-    #[must_use] 
+    #[must_use]
     pub fn new(message: &str) -> Self {
         let pb = ProgressBar::new_spinner();
         pb.set_style(
@@ -111,7 +111,7 @@ pub struct ProgressCounter {
 
 impl ProgressCounter {
     /// Create a new progress counter
-    #[must_use] 
+    #[must_use]
     pub fn new(total: u64, message: &str) -> Self {
         let pb = ProgressBar::new(total);
         pb.set_style(
@@ -152,14 +152,16 @@ impl ProgressCounter {
 }
 
 /// Create a simple progress bar for downloads/uploads
-#[must_use] 
+#[must_use]
 pub fn create_transfer_progress(remote: &str, total_bytes: u64) -> ProgressBar {
     let pb = ProgressBar::new(total_bytes);
     pb.set_style(
         ProgressStyle::default_bar()
-            .template("{prefix:>12} [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}) {msg}")
+            .template(
+                "{prefix:>12} [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}) {msg}",
+            )
             .unwrap()
-            .progress_chars("█▓▒░ ")
+            .progress_chars("█▓▒░ "),
     );
     pb.set_prefix(remote.to_string());
     pb

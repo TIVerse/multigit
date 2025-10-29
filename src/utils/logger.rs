@@ -27,7 +27,7 @@ pub enum LogLevel {
 
 impl LogLevel {
     /// Convert to tracing filter directive
-    #[must_use] 
+    #[must_use]
     pub fn as_filter(&self) -> &'static str {
         match self {
             Self::Error => "error",
@@ -39,7 +39,7 @@ impl LogLevel {
     }
 
     /// Create from verbosity level (0-4)
-    #[must_use] 
+    #[must_use]
     pub fn from_verbosity(level: u8) -> Self {
         match level {
             0 => Self::Error,
@@ -94,27 +94,27 @@ impl Default for LoggerConfig {
 
 impl LoggerConfig {
     /// Create a new logger configuration
-    #[must_use] 
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Set the log level
-    #[must_use] 
+    #[must_use]
     pub fn with_level(mut self, level: LogLevel) -> Self {
         self.level = level;
         self
     }
 
     /// Enable or disable colored output
-    #[must_use] 
+    #[must_use]
     pub fn with_color(mut self, colored: bool) -> Self {
         self.colored = colored;
         self
     }
 
     /// Enable JSON output
-    #[must_use] 
+    #[must_use]
     pub fn json(mut self) -> Self {
         self.json = true;
         self
@@ -127,14 +127,14 @@ impl LoggerConfig {
     }
 
     /// Hide timestamps
-    #[must_use] 
+    #[must_use]
     pub fn without_timestamps(mut self) -> Self {
         self.timestamps = false;
         self
     }
 
     /// Show target module names
-    #[must_use] 
+    #[must_use]
     pub fn with_target(mut self) -> Self {
         self.show_target = true;
         self
@@ -198,7 +198,7 @@ pub fn init_test_logger() {
 }
 
 /// Create a logger configuration from CLI arguments
-#[must_use] 
+#[must_use]
 pub fn logger_from_args(verbosity: u8, json: bool, no_color: bool) -> LoggerConfig {
     let mut config = LoggerConfig::new()
         .with_level(LogLevel::from_verbosity(verbosity))

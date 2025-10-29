@@ -208,7 +208,7 @@ pub enum DaemonAction {
 
 impl Cli {
     /// Parse command-line arguments
-    #[must_use] 
+    #[must_use]
     pub fn parse_args() -> Self {
         Self::parse()
     }

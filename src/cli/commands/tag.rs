@@ -9,7 +9,7 @@ use tracing::info;
 
 /// Tag subcommands
 pub mod commands {
-    use super::{info, Result, GitOperations, MultiGitError, Signature, ObjectType};
+    use super::{info, GitOperations, MultiGitError, ObjectType, Result, Signature};
 
     /// List tags
     pub fn list(_remote: Option<String>) -> Result<()> {
@@ -54,8 +54,8 @@ pub mod commands {
             // Annotated tag
             println!("📝 Creating annotated tag...");
 
-            let sig = Signature::now("MultiGit", "multigit@local")
-                .map_err(MultiGitError::GitError)?;
+            let sig =
+                Signature::now("MultiGit", "multigit@local").map_err(MultiGitError::GitError)?;
 
             git_ops
                 .inner()
@@ -100,9 +100,7 @@ pub mod commands {
 
         match git_ops.inner().find_reference(&tag_ref) {
             Ok(mut tag_reference) => {
-                tag_reference
-                    .delete()
-                    .map_err(MultiGitError::GitError)?;
+                tag_reference.delete().map_err(MultiGitError::GitError)?;
                 println!("✓ Local tag deleted");
             }
             Err(_) => {

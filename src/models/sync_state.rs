@@ -45,19 +45,19 @@ impl SyncState {
     }
 
     /// Check if there are any conflicts
-    #[must_use] 
+    #[must_use]
     pub fn has_conflicts(&self) -> bool {
         !self.conflicts.is_empty()
     }
 
     /// Check if all remotes are in sync
-    #[must_use] 
+    #[must_use]
     pub fn is_fully_synced(&self) -> bool {
         self.remotes.values().all(RemoteState::is_synced) && !self.has_conflicts()
     }
 
     /// Get remotes that are out of sync
-    #[must_use] 
+    #[must_use]
     pub fn out_of_sync_remotes(&self) -> Vec<&String> {
         self.remotes
             .iter()
@@ -124,7 +124,7 @@ impl RemoteState {
     }
 
     /// Check if this remote is in sync (no ahead/behind commits)
-    #[must_use] 
+    #[must_use]
     pub fn is_synced(&self) -> bool {
         self.ahead == 0 && self.behind == 0 && self.status == RemoteSyncStatus::Synced
     }
@@ -330,7 +330,7 @@ impl PushResult {
     }
 
     /// Add duration information
-    #[must_use] 
+    #[must_use]
     pub fn with_duration(mut self, duration: std::time::Duration) -> Self {
         self.duration = Some(duration);
         self

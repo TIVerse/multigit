@@ -143,7 +143,8 @@ pub fn logs(lines: usize) -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to open log file: {e}")))?;
 
     let reader = BufReader::new(file);
-    let all_lines: Vec<String> = reader.lines().filter_map(std::result::Result::ok).collect();
+    #[allow(clippy::lines_filter_map_ok)]
+    let all_lines: Vec<String> = reader.lines().flatten().collect();
 
     let start = if all_lines.len() > lines {
         all_lines.len() - lines

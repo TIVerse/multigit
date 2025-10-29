@@ -25,7 +25,7 @@ pub struct Table {
 
 impl Table {
     /// Create a new table with headers
-    #[must_use] 
+    #[must_use]
     pub fn new(headers: Vec<String>) -> Self {
         Self {
             headers,
@@ -35,7 +35,7 @@ impl Table {
     }
 
     /// Disable colored output
-    #[must_use] 
+    #[must_use]
     pub fn no_colors(mut self) -> Self {
         self.colors_enabled = false;
         self
@@ -131,7 +131,7 @@ pub mod colors {
     pub const WHITE: &str = "\x1b[37m";
 
     /// Apply color to text
-    #[must_use] 
+    #[must_use]
     pub fn colorize(text: &str, color: &str, enabled: bool) -> String {
         if enabled {
             format!("{color}{text}{RESET}")
@@ -141,7 +141,7 @@ pub mod colors {
     }
 
     /// Make text bold
-    #[must_use] 
+    #[must_use]
     pub fn bold(text: &str, enabled: bool) -> String {
         if enabled {
             format!("{BOLD}{text}{RESET}")
@@ -151,7 +151,7 @@ pub mod colors {
     }
 
     /// Make text dim
-    #[must_use] 
+    #[must_use]
     pub fn dim(text: &str, enabled: bool) -> String {
         if enabled {
             format!("{DIM}{text}{RESET}")
@@ -161,25 +161,25 @@ pub mod colors {
     }
 
     /// Success text (green)
-    #[must_use] 
+    #[must_use]
     pub fn success(text: &str, enabled: bool) -> String {
         colorize(text, GREEN, enabled)
     }
 
     /// Error text (red)
-    #[must_use] 
+    #[must_use]
     pub fn error(text: &str, enabled: bool) -> String {
         colorize(text, RED, enabled)
     }
 
     /// Warning text (yellow)
-    #[must_use] 
+    #[must_use]
     pub fn warning(text: &str, enabled: bool) -> String {
         colorize(text, YELLOW, enabled)
     }
 
     /// Info text (cyan)
-    #[must_use] 
+    #[must_use]
     pub fn info(text: &str, enabled: bool) -> String {
         colorize(text, CYAN, enabled)
     }
@@ -208,7 +208,7 @@ pub fn print_output<T: Serialize>(data: &T, format: OutputFormat) -> Result<(), 
 }
 
 /// Format a duration in human-readable form
-#[must_use] 
+#[must_use]
 pub fn format_duration(seconds: u64) -> String {
     if seconds < 60 {
         format!("{seconds}s")
@@ -220,7 +220,7 @@ pub fn format_duration(seconds: u64) -> String {
 }
 
 /// Format bytes in human-readable form
-#[must_use] 
+#[must_use]
 pub fn format_bytes(bytes: u64) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
     let mut size = bytes as f64;
@@ -279,7 +279,7 @@ pub enum Status {
 
 impl Status {
     /// Get the symbol for this status
-    #[must_use] 
+    #[must_use]
     pub fn symbol(&self) -> &'static str {
         match self {
             Status::Success => "✓",
@@ -291,7 +291,7 @@ impl Status {
     }
 
     /// Get the color for this status
-    #[must_use] 
+    #[must_use]
     pub fn color(&self) -> &'static str {
         match self {
             Status::Success => colors::GREEN,
@@ -303,7 +303,7 @@ impl Status {
     }
 
     /// Format a status line
-    #[must_use] 
+    #[must_use]
     pub fn format(&self, message: &str, color_enabled: bool) -> String {
         let symbol = self.symbol();
         if color_enabled {

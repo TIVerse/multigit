@@ -10,7 +10,10 @@ use tracing::info;
 
 /// Branch subcommands
 pub mod commands {
-    use super::{info, Result, GitOperations, BranchManager, AuthManager, AuthBackend, create_on_github, create_on_gitlab, delete_on_github, delete_on_gitlab};
+    use super::{
+        create_on_github, create_on_gitlab, delete_on_github, delete_on_gitlab, info, AuthBackend,
+        AuthManager, BranchManager, GitOperations, Result,
+    };
 
     /// List branches across all remotes
     pub fn list(verbose: bool) -> Result<()> {

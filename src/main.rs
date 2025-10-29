@@ -380,12 +380,13 @@ fn main() -> Result<()> {
         Commands::Conflict { action } => {
             use multigit::cli::commands::conflict;
             match action {
-                ConflictAction::List => {
+                ConflictCommands::List => {
                     conflict::detect_conflicts()?;
                 }
-                ConflictAction::Resolve { strategy } => {
-                    let strat = conflict::parse_strategy(strategy)?;
-                    conflict::resolve_conflicts(strat)?;
+                ConflictCommands::Resolve => {
+                    // Use default fast-forward strategy
+                    use multigit::core::conflict_resolver::ResolutionStrategy;
+                    conflict::resolve_conflicts(ResolutionStrategy::FastForwardOnly)?;
                 }
             }
         }

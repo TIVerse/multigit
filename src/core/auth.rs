@@ -33,7 +33,7 @@ pub struct AuthManager {
 
 impl AuthManager {
     /// Create a new auth manager
-    #[must_use] 
+    #[must_use]
     pub fn new(preferred_backend: AuthBackend, enable_audit: bool) -> Self {
         let keyring = if matches!(preferred_backend, AuthBackend::Keyring) {
             Some(KeyringManager::new())
@@ -217,8 +217,7 @@ impl EncryptedCredentialStore {
         let json = String::from_utf8(decrypted)
             .map_err(|e| MultiGitError::Other(format!("Invalid UTF-8: {e}")))?;
 
-        serde_json::from_str(&json)
-            .map_err(|e| MultiGitError::Other(format!("Invalid JSON: {e}")))
+        serde_json::from_str(&json).map_err(|e| MultiGitError::Other(format!("Invalid JSON: {e}")))
     }
 
     fn save_store(&self, store: &HashMap<String, String>) -> Result<()> {

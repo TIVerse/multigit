@@ -33,7 +33,7 @@ pub struct Conflict {
 
 impl Conflict {
     /// Create a new conflict
-    #[must_use] 
+    #[must_use]
     pub fn new(branch: String, ahead: usize, behind: usize) -> Self {
         Self {
             branch,
@@ -51,13 +51,13 @@ pub struct ConflictResolver {
 
 impl ConflictResolver {
     /// Create a new conflict resolver with the given strategy
-    #[must_use] 
+    #[must_use]
     pub fn new(strategy: ResolutionStrategy) -> Self {
         Self { strategy }
     }
 
     /// Detect conflicts between local and remote branches
-    #[must_use] 
+    #[must_use]
     pub fn detect_conflict(&self, ahead: usize, behind: usize) -> Option<Conflict> {
         if ahead > 0 && behind > 0 {
             Some(Conflict {
@@ -104,7 +104,7 @@ impl ConflictResolver {
     }
 
     /// Check if a conflict can be auto-resolved
-    #[must_use] 
+    #[must_use]
     pub fn can_auto_resolve(&self, conflict: &Conflict) -> bool {
         match self.strategy {
             ResolutionStrategy::FastForwardOnly => !conflict.diverged,

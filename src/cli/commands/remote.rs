@@ -132,7 +132,8 @@ pub fn list_remotes(detailed: bool) -> Result<()> {
         let status = if remote_config.enabled { "✓" } else { "✗" };
         let provider_display = remote_config
             .provider
-            .as_ref().map_or_else(|| name.clone(), std::string::ToString::to_string);
+            .as_ref()
+            .map_or_else(|| name.clone(), std::string::ToString::to_string);
 
         println!("  {status} {name} ({provider_display})");
 

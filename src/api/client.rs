@@ -43,7 +43,7 @@ impl ApiClient {
     }
 
     /// Get the underlying reqwest client
-    #[must_use] 
+    #[must_use]
     pub fn client(&self) -> &Client {
         &self.client
     }

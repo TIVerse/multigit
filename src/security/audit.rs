@@ -81,13 +81,13 @@ pub struct AuditLogger {
 
 impl AuditLogger {
     /// Create a new audit logger
-    #[must_use] 
+    #[must_use]
     pub fn new(log_path: PathBuf, enabled: bool) -> Self {
         Self { log_path, enabled }
     }
 
     /// Get default audit log path
-    #[must_use] 
+    #[must_use]
     pub fn default_path() -> PathBuf {
         let mut path = dirs::config_dir().unwrap_or_else(|| PathBuf::from("."));
         path.push("multigit");

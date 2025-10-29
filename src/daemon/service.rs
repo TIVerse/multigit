@@ -21,7 +21,7 @@ pub struct DaemonService {
 
 impl DaemonService {
     /// Create a new daemon service
-    #[must_use] 
+    #[must_use]
     pub fn new(interval_seconds: u64) -> Self {
         let config_dir = dirs::config_dir().unwrap_or_else(|| PathBuf::from(".multigit"));
 
@@ -127,9 +127,7 @@ impl DaemonService {
                 }
                 Err(e) => {
                     error!("Failed to send signal: {}", e);
-                    return Err(MultiGitError::daemon(format!(
-                        "Failed to stop daemon: {e}"
-                    )));
+                    return Err(MultiGitError::daemon(format!("Failed to stop daemon: {e}")));
                 }
             }
         }
@@ -288,7 +286,6 @@ impl Drop for DaemonService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[test]
     fn test_daemon_creation() {

@@ -65,9 +65,7 @@ pub async fn execute(branch: Option<String>, force: bool, remotes: Vec<String>) 
         }
     }
 
-    println!(
-        "\n📊 Summary: {success_count} succeeded, {failed_count} failed"
-    );
+    println!("\n📊 Summary: {success_count} succeeded, {failed_count} failed");
 
     if failed_count > 0 {
         return Err(crate::utils::error::MultiGitError::Other(format!(

@@ -53,7 +53,7 @@ impl SyncManager {
     }
 
     /// Set maximum parallel operations
-    #[must_use] 
+    #[must_use]
     pub fn with_max_parallel(mut self, max: usize) -> Self {
         self.max_parallel = max.max(1);
         self

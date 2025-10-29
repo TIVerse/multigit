@@ -13,7 +13,7 @@ pub struct BranchManager<'repo> {
 
 impl<'repo> BranchManager<'repo> {
     /// Create a new branch manager for a repository
-    #[must_use] 
+    #[must_use]
     pub fn new(repo: &'repo Repository) -> Self {
         Self { repo }
     }
@@ -106,9 +106,8 @@ impl<'repo> BranchManager<'repo> {
             .find_branch(name, BranchType::Local)
             .map_err(|_| MultiGitError::Other(format!("Branch '{name}' not found")))?;
 
-        self.branch_to_info(branch)?.ok_or_else(|| {
-            MultiGitError::Other(format!("Could not get info for branch '{name}'"))
-        })
+        self.branch_to_info(branch)?
+            .ok_or_else(|| MultiGitError::Other(format!("Could not get info for branch '{name}'")))
     }
 
     /// Check if a branch exists
@@ -279,8 +278,7 @@ pub struct BranchInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
-    
+
     use tempfile::TempDir;
 
     fn create_test_repo() -> (TempDir, Repository) {

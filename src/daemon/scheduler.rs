@@ -17,7 +17,7 @@ pub struct Scheduler {
 
 impl Scheduler {
     /// Create a new scheduler with the given interval
-    #[must_use] 
+    #[must_use]
     pub fn new(interval_seconds: u64) -> Self {
         Self {
             interval_seconds,
@@ -75,19 +75,19 @@ impl Scheduler {
     }
 
     /// Check if the scheduler is running
-    #[must_use] 
+    #[must_use]
     pub fn is_running(&self) -> bool {
         self.running.load(Ordering::SeqCst)
     }
 
     /// Get the interval in seconds
-    #[must_use] 
+    #[must_use]
     pub fn interval_seconds(&self) -> u64 {
         self.interval_seconds
     }
 
     /// Get a handle to stop the scheduler
-    #[must_use] 
+    #[must_use]
     pub fn stop_handle(&self) -> SchedulerHandle {
         SchedulerHandle {
             running: self.running.clone(),
@@ -109,7 +109,7 @@ impl SchedulerHandle {
     }
 
     /// Check if scheduler is running
-    #[must_use] 
+    #[must_use]
     pub fn is_running(&self) -> bool {
         self.running.load(Ordering::SeqCst)
     }
@@ -162,13 +162,13 @@ impl Schedule {
     }
 
     /// Get the interval in seconds
-    #[must_use] 
+    #[must_use]
     pub fn interval_seconds(&self) -> u64 {
         self.interval_seconds
     }
 
     /// Create a schedule for every N seconds
-    #[must_use] 
+    #[must_use]
     pub fn every_seconds(seconds: u64) -> Self {
         Self {
             interval_seconds: seconds,
@@ -176,7 +176,7 @@ impl Schedule {
     }
 
     /// Create a schedule for every N minutes
-    #[must_use] 
+    #[must_use]
     pub fn every_minutes(minutes: u64) -> Self {
         Self {
             interval_seconds: minutes * 60,
@@ -184,7 +184,7 @@ impl Schedule {
     }
 
     /// Create a schedule for every N hours
-    #[must_use] 
+    #[must_use]
     pub fn every_hours(hours: u64) -> Self {
         Self {
             interval_seconds: hours * 3600,

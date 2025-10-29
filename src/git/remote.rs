@@ -13,7 +13,7 @@ pub struct RemoteManager<'repo> {
 
 impl<'repo> RemoteManager<'repo> {
     /// Create a new remote manager for a repository
-    #[must_use] 
+    #[must_use]
     pub fn new(repo: &'repo Repository) -> Self {
         Self { repo }
     }
@@ -188,7 +188,7 @@ pub mod url_utils {
     }
 
     /// Extract repository name from URL
-    #[must_use] 
+    #[must_use]
     pub fn extract_repo_name(url: &str) -> Option<String> {
         let path = if url.contains("://") {
             Url::parse(url).ok()?.path().to_string()

@@ -68,7 +68,8 @@ pub fn encrypt_string(text: &str, passphrase: &str) -> Result<String> {
 
 /// Decrypt a base64-encoded string
 pub fn decrypt_string(encrypted_base64: &str, passphrase: &str) -> Result<String> {
-    let encrypted = STANDARD.decode(encrypted_base64)
+    let encrypted = STANDARD
+        .decode(encrypted_base64)
         .map_err(|e| MultiGitError::Other(format!("Base64 decode failed: {e}")))?;
 
     let decrypted = decrypt_with_passphrase(&encrypted, passphrase)?;

@@ -85,9 +85,7 @@ pub async fn execute(name: String, description: Option<String>, private: bool) -
     let success_count = results.iter().filter(|(_, success)| *success).count();
     let total_count = results.len();
 
-    println!(
-        "\n📊 Summary: Created on {success_count}/{total_count} platforms"
-    );
+    println!("\n📊 Summary: Created on {success_count}/{total_count} platforms");
 
     if success_count > 0 {
         println!("\n💡 Next steps:");

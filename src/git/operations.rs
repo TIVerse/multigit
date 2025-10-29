@@ -76,7 +76,7 @@ impl GitOperations {
     }
 
     /// Get the repository path
-    #[must_use] 
+    #[must_use]
     pub fn path(&self) -> &Path {
         self.repo.path()
     }
@@ -220,13 +220,13 @@ impl GitOperations {
     }
 
     /// Check if repository is bare
-    #[must_use] 
+    #[must_use]
     pub fn is_bare(&self) -> bool {
         self.repo.is_bare()
     }
 
     /// Get the underlying `git2::Repository` reference
-    #[must_use] 
+    #[must_use]
     pub fn inner(&self) -> &Repository {
         &self.repo
     }

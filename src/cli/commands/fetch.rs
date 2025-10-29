@@ -49,9 +49,7 @@ pub async fn execute(remotes: Vec<String>, all: bool) -> Result<()> {
         }
     }
 
-    println!(
-        "\n📊 Summary: {success_count} succeeded, {failed_count} failed"
-    );
+    println!("\n📊 Summary: {success_count} succeeded, {failed_count} failed");
 
     if success_count > 0 {
         println!("\n💡 Use 'multigit status' to see changes");

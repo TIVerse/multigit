@@ -132,13 +132,13 @@ impl Config {
     }
 
     /// Get the repo config directory path
-    #[must_use] 
+    #[must_use]
     pub fn repo_config_dir() -> PathBuf {
         PathBuf::from(".multigit")
     }
 
     /// Get the repo config file path
-    #[must_use] 
+    #[must_use]
     pub fn repo_config_path() -> PathBuf {
         Self::repo_config_dir().join("config.toml")
     }
@@ -228,13 +228,13 @@ impl Config {
     }
 
     /// Get a remote configuration
-    #[must_use] 
+    #[must_use]
     pub fn get_remote(&self, name: &str) -> Option<&RemoteConfig> {
         self.remotes.get(name)
     }
 
     /// Get all enabled remotes
-    #[must_use] 
+    #[must_use]
     pub fn enabled_remotes(&self) -> HashMap<String, &RemoteConfig> {
         self.remotes
             .iter()
@@ -244,7 +244,7 @@ impl Config {
     }
 
     /// Check if `MultiGit` is initialized in the current directory
-    #[must_use] 
+    #[must_use]
     pub fn is_initialized() -> bool {
         Self::repo_config_dir().exists()
     }

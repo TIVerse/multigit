@@ -16,7 +16,7 @@ pub struct KeyringManager {
 
 impl KeyringManager {
     /// Create a new keyring manager
-    #[must_use] 
+    #[must_use]
     pub fn new() -> Self {
         Self {
             service: SERVICE_NAME.to_string(),
@@ -24,7 +24,7 @@ impl KeyringManager {
     }
 
     /// Create a keyring manager with a custom service name
-    #[must_use] 
+    #[must_use]
     pub fn with_service(service: String) -> Self {
         Self { service }
     }
@@ -75,7 +75,7 @@ impl KeyringManager {
     }
 
     /// Check if a credential exists in the keyring
-    #[must_use] 
+    #[must_use]
     pub fn exists(&self, key: &str) -> bool {
         self.retrieve(key).is_ok()
     }
