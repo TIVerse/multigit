@@ -10,7 +10,7 @@ fn test_sync_manager_creation() {
     let temp_dir = TempDir::new().unwrap();
     let repo = Repository::init(temp_dir.path()).unwrap();
 
-    let manager = SyncManager::new(repo.path().to_path_buf());
+    let manager = SyncManager::new(repo.path());
     assert!(manager.is_ok());
 }
 
@@ -19,9 +19,7 @@ fn test_sync_manager_with_max_parallel() {
     let temp_dir = TempDir::new().unwrap();
     let repo = Repository::init(temp_dir.path()).unwrap();
 
-    let manager = SyncManager::new(repo.path().to_path_buf())
-        .unwrap()
-        .with_max_parallel(8);
+    let manager = SyncManager::new(repo.path()).unwrap().with_max_parallel(8);
 
     // Manager should be created successfully
     assert_eq!(

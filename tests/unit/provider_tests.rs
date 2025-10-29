@@ -26,19 +26,28 @@ fn test_github_ssh_url() {
 
 #[test]
 fn test_provider_type_parsing() {
-    assert!(matches!(ProviderType::from("github"), ProviderType::GitHub));
-    assert!(matches!(ProviderType::from("gitlab"), ProviderType::GitLab));
     assert!(matches!(
-        ProviderType::from("bitbucket"),
+        "github".parse::<ProviderType>().unwrap(),
+        ProviderType::GitHub
+    ));
+    assert!(matches!(
+        "gitlab".parse::<ProviderType>().unwrap(),
+        ProviderType::GitLab
+    ));
+    assert!(matches!(
+        "bitbucket".parse::<ProviderType>().unwrap(),
         ProviderType::Bitbucket
     ));
-    assert!(matches!(ProviderType::from("gitea"), ProviderType::Gitea));
     assert!(matches!(
-        ProviderType::from("forgejo"),
+        "gitea".parse::<ProviderType>().unwrap(),
+        ProviderType::Gitea
+    ));
+    assert!(matches!(
+        "forgejo".parse::<ProviderType>().unwrap(),
         ProviderType::Forgejo
     ));
     assert!(matches!(
-        ProviderType::from("codeberg"),
+        "codeberg".parse::<ProviderType>().unwrap(),
         ProviderType::Codeberg
     ));
 }

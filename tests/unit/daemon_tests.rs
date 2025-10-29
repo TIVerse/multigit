@@ -2,7 +2,6 @@
 
 use multigit::daemon::scheduler::Scheduler;
 use multigit::daemon::service::DaemonService;
-use std::time::Duration;
 
 #[test]
 fn test_daemon_service_creation() {

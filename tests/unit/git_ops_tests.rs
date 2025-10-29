@@ -84,11 +84,11 @@ fn test_create_and_list_branches() {
     let manager = BranchManager::new(&repo);
 
     // Create a branch
-    let result = manager.create_branch("feature", &repo.find_commit(commit).unwrap());
+    let result = manager.create("feature", Some(commit));
     assert!(result.is_ok());
 
     // List branches
-    let branches = manager.list_branches();
+    let branches = manager.list_local();
     assert!(branches.is_ok());
     let branch_list = branches.unwrap();
     assert!(!branch_list.is_empty());
@@ -113,12 +113,10 @@ fn test_delete_branch() {
     let manager = BranchManager::new(&repo);
 
     // Create a branch
-    manager
-        .create_branch("to-delete", &repo.find_commit(commit).unwrap())
-        .unwrap();
+    manager.create("to-delete", Some(commit)).unwrap();
 
     // Delete the branch
-    let result = manager.delete_branch("to-delete");
+    let result = manager.delete("to-delete");
     assert!(result.is_ok());
 }
 
@@ -176,21 +174,25 @@ fn test_remove_remote() {
 
 #[test]
 fn test_extract_repo_name() {
-    let name = RemoteManager::extract_repo_name("https://github.com/user/repo.git");
+    use multigit::git::remote::url_utils;
+
+    let name = url_utils::extract_repo_name("https://github.com/user/repo.git");
     assert_eq!(name, Some("repo".to_string()));
 
-    let name2 = RemoteManager::extract_repo_name("git@github.com:user/myproject.git");
+    let name2 = url_utils::extract_repo_name("git@github.com:user/myproject.git");
     assert_eq!(name2, Some("myproject".to_string()));
 }
 
 #[test]
 fn test_url_conversion() {
-    let https = "https://github.com/user/repo.git";
-    let ssh = RemoteManager::https_to_ssh(https);
-    assert_eq!(ssh, Some("git@github.com:user/repo.git".to_string()));
+    use multigit::git::remote::url_utils;
 
-    let back_to_https = RemoteManager::ssh_to_https(&ssh.unwrap());
-    assert_eq!(back_to_https, Some(https.to_string()));
+    let https = "https://github.com/user/repo.git";
+    let ssh = url_utils::https_to_ssh(https);
+    assert_eq!(ssh, Ok("git@github.com:user/repo.git".to_string()));
+
+    let back_to_https = url_utils::ssh_to_https(&ssh.unwrap());
+    assert_eq!(back_to_https, Ok(https.to_string()));
 }
 
 #[test]

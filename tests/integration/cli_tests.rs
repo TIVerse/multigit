@@ -7,7 +7,7 @@ use tempfile::TempDir;
 #[test]
 fn test_cli_parser_creation() {
     // Test that CLI parser can be created
-    let args = vec!["multigit", "init"];
+    let args = ["multigit", "init"];
     let result = std::panic::catch_unwind(|| {
         // This would normally parse from CLI args
         // We're just testing the structure exists
@@ -147,7 +147,7 @@ fn test_health_checker_creation() {
     let _repo = Repository::init(temp_dir.path()).unwrap();
 
     use multigit::core::health_checker::HealthChecker;
-    let checker = HealthChecker::new(temp_dir.path().to_path_buf());
+    let checker = HealthChecker::new(temp_dir.path());
     assert!(checker.is_ok());
 }
 
@@ -167,7 +167,7 @@ fn test_health_check_execution() {
         .unwrap();
 
     use multigit::core::health_checker::HealthChecker;
-    let checker = HealthChecker::new(temp_dir.path().to_path_buf()).unwrap();
+    let checker = HealthChecker::new(temp_dir.path()).unwrap();
     let _report = checker.check();
 
     // Health check completed
@@ -189,7 +189,7 @@ fn test_is_healthy() {
         .unwrap();
 
     use multigit::core::health_checker::HealthChecker;
-    let checker = HealthChecker::new(temp_dir.path().to_path_buf()).unwrap();
+    let checker = HealthChecker::new(temp_dir.path()).unwrap();
 
     // Should be healthy for a fresh repo
     let is_healthy = checker.is_healthy();

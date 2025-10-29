@@ -7,10 +7,9 @@ use multigit::models::repository::Repository;
 
 #[test]
 fn test_remote_builder() {
-    let remote = Remote::builder("github", "testuser")
+    let remote = Remote::new("github", ProviderType::GitHub, "testuser")
         .with_ssh()
-        .with_priority(10)
-        .build();
+        .with_priority(10);
 
     assert_eq!(remote.name, "github");
     assert_eq!(remote.username, "testuser");
@@ -20,23 +19,29 @@ fn test_remote_builder() {
 
 #[test]
 fn test_remote_disabled() {
-    let remote = Remote::builder("gitlab", "user").disabled().build();
+    let remote = Remote::new("gitlab", ProviderType::GitLab, "user").disabled();
 
     assert!(!remote.enabled);
 }
 
 #[test]
 fn test_git_remote_name() {
-    let remote = Remote::builder("github", "user").build();
+    let remote = Remote::new("github", ProviderType::GitHub, "user");
     assert_eq!(remote.git_remote_name(), "multigit-github");
 }
 
 #[test]
 fn test_provider_type_parsing() {
-    assert!(matches!(ProviderType::from("github"), ProviderType::GitHub));
-    assert!(matches!(ProviderType::from("gitlab"), ProviderType::GitLab));
     assert!(matches!(
-        ProviderType::from("bitbucket"),
+        "github".parse::<ProviderType>().unwrap(),
+        ProviderType::GitHub
+    ));
+    assert!(matches!(
+        "gitlab".parse::<ProviderType>().unwrap(),
+        ProviderType::GitLab
+    ));
+    assert!(matches!(
+        "bitbucket".parse::<ProviderType>().unwrap(),
         ProviderType::Bitbucket
     ));
 }
@@ -116,20 +121,32 @@ fn test_rate_limit_time_until_reset() {
 }
 
 #[test]
-fn test_repository_local() {
-    let repo = Repository::local("/path/to/repo");
-    assert_eq!(repo.path, "/path/to/repo");
-    assert!(repo.remotes.is_empty());
+fn test_repository_creation() {
+    let repo = Repository::new(
+        "test-repo",
+        "https://github.com/user/test-repo.git",
+        "git@github.com:user/test-repo.git",
+        false,
+        "main",
+    );
+    assert_eq!(repo.name, "test-repo");
+    assert_eq!(repo.default_branch, "main");
 }
 
 #[test]
 fn test_repository_builder() {
-    let repo = Repository::builder("/path/to/repo")
-        .with_remote(Remote::builder("origin", "user").build())
-        .build();
+    let repo = Repository::new(
+        "my-repo",
+        "https://github.com/user/my-repo.git",
+        "git@github.com:user/my-repo.git",
+        false,
+        "main",
+    )
+    .with_full_name("user/my-repo")
+    .with_description("Test repository");
 
-    assert_eq!(repo.path, "/path/to/repo");
-    assert_eq!(repo.remotes.len(), 1);
+    assert_eq!(repo.name, "my-repo");
+    assert_eq!(repo.full_name, Some("user/my-repo".to_string()));
 }
 
 #[test]
@@ -144,7 +161,7 @@ fn test_settings_default() {
 fn test_sync_config_default() {
     let config = SyncConfig::default();
     assert!(matches!(config.strategy, SyncStrategy::FastForward));
-    assert!(config.auto_fetch);
+    assert!(!config.auto_sync);
 }
 
 #[test]

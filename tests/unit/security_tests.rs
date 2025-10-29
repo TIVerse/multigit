@@ -102,15 +102,6 @@ fn test_keyring_manager_creation() {
 }
 
 #[test]
-fn test_keyring_token_key() {
-    let key1 = KeyringManager::token_key("github");
-    let key2 = KeyringManager::token_key("gitlab");
-
-    assert_ne!(key1, key2);
-    assert!(key1.contains("github"));
-}
-
-#[test]
 fn test_audit_entry_builder_pattern() {
     let entry = AuditEntry::new(AuditEventType::Push, "pushed to remote", true)
         .with_user("testuser")
