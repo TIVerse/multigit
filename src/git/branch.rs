@@ -13,6 +13,7 @@ pub struct BranchManager<'repo> {
 
 impl<'repo> BranchManager<'repo> {
     /// Create a new branch manager for a repository
+    #[must_use] 
     pub fn new(repo: &'repo Repository) -> Self {
         Self { repo }
     }
@@ -52,7 +53,7 @@ impl<'repo> BranchManager<'repo> {
         let mut branch = self
             .repo
             .find_branch(name, BranchType::Local)
-            .map_err(|_| MultiGitError::Other(format!("Branch '{}' not found", name)))?;
+            .map_err(|_| MultiGitError::Other(format!("Branch '{name}' not found")))?;
 
         branch.delete().map_err(MultiGitError::GitError)?;
 
@@ -103,10 +104,10 @@ impl<'repo> BranchManager<'repo> {
         let branch = self
             .repo
             .find_branch(name, BranchType::Local)
-            .map_err(|_| MultiGitError::Other(format!("Branch '{}' not found", name)))?;
+            .map_err(|_| MultiGitError::Other(format!("Branch '{name}' not found")))?;
 
         self.branch_to_info(branch)?.ok_or_else(|| {
-            MultiGitError::Other(format!("Could not get info for branch '{}'", name))
+            MultiGitError::Other(format!("Could not get info for branch '{name}'"))
         })
     }
 
@@ -126,7 +127,7 @@ impl<'repo> BranchManager<'repo> {
         let mut branch = self
             .repo
             .find_branch(old_name, BranchType::Local)
-            .map_err(|_| MultiGitError::Other(format!("Branch '{}' not found", old_name)))?;
+            .map_err(|_| MultiGitError::Other(format!("Branch '{old_name}' not found")))?;
 
         branch
             .rename(new_name, force)
@@ -165,7 +166,7 @@ impl<'repo> BranchManager<'repo> {
         let branch = self
             .repo
             .find_branch(name, BranchType::Local)
-            .map_err(|_| MultiGitError::Other(format!("Branch '{}' not found", name)))?;
+            .map_err(|_| MultiGitError::Other(format!("Branch '{name}' not found")))?;
 
         let refname = branch
             .get()
@@ -188,8 +189,8 @@ impl<'repo> BranchManager<'repo> {
 
     /// Compare two branches and get the number of commits ahead/behind
     pub fn compare(&self, branch1: &str, branch2: &str) -> Result<(usize, usize)> {
-        let ref1 = format!("refs/heads/{}", branch1);
-        let ref2 = format!("refs/heads/{}", branch2);
+        let ref1 = format!("refs/heads/{branch1}");
+        let ref2 = format!("refs/heads/{branch2}");
 
         let oid1 = self
             .repo
@@ -218,7 +219,7 @@ impl<'repo> BranchManager<'repo> {
         let branch = self
             .repo
             .find_branch(name, BranchType::Local)
-            .map_err(|_| MultiGitError::Other(format!("Branch '{}' not found", name)))?;
+            .map_err(|_| MultiGitError::Other(format!("Branch '{name}' not found")))?;
 
         match branch.upstream() {
             Ok(upstream) => {
@@ -233,7 +234,7 @@ impl<'repo> BranchManager<'repo> {
         }
     }
 
-    /// Helper to convert a git2::Branch to BranchInfo
+    /// Helper to convert a `git2::Branch` to `BranchInfo`
     fn branch_to_info(&self, branch: Branch) -> Result<Option<BranchInfo>> {
         let name = match branch.name().map_err(MultiGitError::GitError)? {
             Some(n) => n.to_string(),
@@ -244,13 +245,13 @@ impl<'repo> BranchManager<'repo> {
         let reference = branch.get();
         let target = reference.target();
 
-        let upstream = if !branch.get().is_remote() {
+        let upstream = if branch.get().is_remote() {
+            None
+        } else {
             branch
                 .upstream()
                 .ok()
                 .and_then(|u| u.name().ok().and_then(|n| n.map(String::from)))
-        } else {
-            None
         };
 
         Ok(Some(BranchInfo {
@@ -278,8 +279,8 @@ pub struct BranchInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
-    use std::path::Path;
+    
+    
     use tempfile::TempDir;
 
     fn create_test_repo() -> (TempDir, Repository) {

@@ -34,6 +34,8 @@ pub fn validate_repo_name(name: &str) -> Result<()> {
 
 /// Validate a username
 pub fn validate_username(username: &str) -> Result<()> {
+    static USERNAME_REGEX: OnceLock<Regex> = OnceLock::new();
+    
     if username.is_empty() {
         return Err(MultiGitError::invalid_input("Username cannot be empty"));
     }
@@ -45,7 +47,6 @@ pub fn validate_username(username: &str) -> Result<()> {
         ));
     }
 
-    static USERNAME_REGEX: OnceLock<Regex> = OnceLock::new();
     let regex = USERNAME_REGEX.get_or_init(|| {
         Regex::new(r"^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$").expect("Invalid regex pattern")
     });
@@ -85,7 +86,7 @@ pub fn validate_branch_name(branch: &str) -> Result<()> {
             "Branch name cannot contain: {}",
             forbidden
                 .iter()
-                .map(|c| format!("'{}'", c))
+                .map(|c| format!("'{c}'"))
                 .collect::<Vec<_>>()
                 .join(", ")
         )));
@@ -97,7 +98,7 @@ pub fn validate_branch_name(branch: &str) -> Result<()> {
 /// Validate a URL
 pub fn validate_url(url_str: &str) -> Result<()> {
     url::Url::parse(url_str)
-        .map_err(|e| MultiGitError::invalid_input(format!("Invalid URL: {}", e)))?;
+        .map_err(|e| MultiGitError::invalid_input(format!("Invalid URL: {e}")))?;
 
     Ok(())
 }
@@ -124,6 +125,7 @@ pub fn validate_token(token: &str) -> Result<()> {
 }
 
 /// Sanitize a string for safe display (hide sensitive data)
+#[must_use] 
 pub fn sanitize_token(token: &str) -> String {
     if token.len() <= 8 {
         "*".repeat(token.len())
@@ -133,6 +135,7 @@ pub fn sanitize_token(token: &str) -> String {
 }
 
 /// Check if a path is a valid Git repository
+#[must_use] 
 pub fn is_git_repository(path: &std::path::Path) -> bool {
     path.join(".git").exists()
 }

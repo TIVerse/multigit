@@ -5,6 +5,7 @@
 use crate::utils::error::{MultiGitError, Result};
 use age::secrecy::Secret;
 use age::{Decryptor, Encryptor};
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::io::{Read, Write};
 use tracing::{debug, info};
 
@@ -17,15 +18,15 @@ pub fn encrypt_with_passphrase(data: &[u8], passphrase: &str) -> Result<Vec<u8>>
     let mut encrypted = Vec::new();
     let mut writer = encryptor
         .wrap_output(&mut encrypted)
-        .map_err(|e| MultiGitError::Other(format!("Encryption failed: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("Encryption failed: {e}")))?;
 
     writer
         .write_all(data)
-        .map_err(|e| MultiGitError::Other(format!("Write failed: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("Write failed: {e}")))?;
 
     writer
         .finish()
-        .map_err(|e| MultiGitError::Other(format!("Encryption finish failed: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("Encryption finish failed: {e}")))?;
 
     info!("Successfully encrypted data");
     Ok(encrypted)
@@ -36,7 +37,7 @@ pub fn decrypt_with_passphrase(encrypted_data: &[u8], passphrase: &str) -> Resul
     debug!("Decrypting data with passphrase");
 
     let decryptor = match Decryptor::new(encrypted_data)
-        .map_err(|e| MultiGitError::Other(format!("Decryption setup failed: {}", e)))?
+        .map_err(|e| MultiGitError::Other(format!("Decryption setup failed: {e}")))?
     {
         Decryptor::Passphrase(d) => d,
         _ => {
@@ -49,11 +50,11 @@ pub fn decrypt_with_passphrase(encrypted_data: &[u8], passphrase: &str) -> Resul
     let mut decrypted = Vec::new();
     let mut reader = decryptor
         .decrypt(&Secret::new(passphrase.to_owned()), None)
-        .map_err(|e| MultiGitError::Other(format!("Decryption failed: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("Decryption failed: {e}")))?;
 
     reader
         .read_to_end(&mut decrypted)
-        .map_err(|e| MultiGitError::Other(format!("Read failed: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("Read failed: {e}")))?;
 
     info!("Successfully decrypted data");
     Ok(decrypted)
@@ -62,18 +63,18 @@ pub fn decrypt_with_passphrase(encrypted_data: &[u8], passphrase: &str) -> Resul
 /// Encrypt a string and return base64-encoded result
 pub fn encrypt_string(text: &str, passphrase: &str) -> Result<String> {
     let encrypted = encrypt_with_passphrase(text.as_bytes(), passphrase)?;
-    Ok(base64::encode(encrypted))
+    Ok(STANDARD.encode(encrypted))
 }
 
 /// Decrypt a base64-encoded string
 pub fn decrypt_string(encrypted_base64: &str, passphrase: &str) -> Result<String> {
-    let encrypted = base64::decode(encrypted_base64)
-        .map_err(|e| MultiGitError::Other(format!("Base64 decode failed: {}", e)))?;
+    let encrypted = STANDARD.decode(encrypted_base64)
+        .map_err(|e| MultiGitError::Other(format!("Base64 decode failed: {e}")))?;
 
     let decrypted = decrypt_with_passphrase(&encrypted, passphrase)?;
 
     String::from_utf8(decrypted)
-        .map_err(|e| MultiGitError::Other(format!("UTF-8 decode failed: {}", e)))
+        .map_err(|e| MultiGitError::Other(format!("UTF-8 decode failed: {e}")))
 }
 
 #[cfg(test)]

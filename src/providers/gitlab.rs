@@ -38,7 +38,7 @@ impl GitLabProvider {
         self.rate_limiter
             .acquire()
             .await
-            .map_err(|e| MultiGitError::Other(e))?;
+            .map_err(MultiGitError::Other)?;
 
         let url = format!("{}{}", self.api_url, endpoint);
         debug!("GitLab GET: {}", url);
@@ -55,8 +55,7 @@ impl GitLabProvider {
                 let status = response.status();
                 let error_text = response.text().await.unwrap_or_default();
                 return Err(MultiGitError::Other(format!(
-                    "GitLab API error: {} - {}",
-                    status, error_text
+                    "GitLab API error: {status} - {error_text}"
                 )));
             }
 
@@ -70,7 +69,7 @@ impl GitLabProvider {
         self.rate_limiter
             .acquire()
             .await
-            .map_err(|e| MultiGitError::Other(e))?;
+            .map_err(MultiGitError::Other)?;
 
         let url = format!("{}{}", self.api_url, endpoint);
         debug!("GitLab POST: {}", url);
@@ -88,8 +87,7 @@ impl GitLabProvider {
                 let status = response.status();
                 let error_text = response.text().await.unwrap_or_default();
                 return Err(MultiGitError::Other(format!(
-                    "GitLab API error: {} - {}",
-                    status, error_text
+                    "GitLab API error: {status} - {error_text}"
                 )));
             }
 
@@ -102,7 +100,7 @@ impl GitLabProvider {
 
 #[async_trait]
 impl Provider for GitLabProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "gitlab"
     }
 
@@ -145,12 +143,12 @@ impl Provider for GitLabProvider {
             created_at: data["created_at"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
             updated_at: data["last_activity_at"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
         })
     }
@@ -158,7 +156,7 @@ impl Provider for GitLabProvider {
     async fn get_repo(&self, name: &str) -> anyhow::Result<Repository> {
         let path_string = format!("{}/{}", self.username, name);
         let encoded_path = urlencoding::encode(&path_string);
-        let endpoint = format!("/projects/{}", encoded_path);
+        let endpoint = format!("/projects/{encoded_path}");
         let data = self.get(&endpoint).await?;
 
         Ok(Repository {
@@ -181,12 +179,12 @@ impl Provider for GitLabProvider {
             created_at: data["created_at"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
             updated_at: data["last_activity_at"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
         })
     }
@@ -211,7 +209,7 @@ impl Provider for GitLabProvider {
             "ref": "main",
         });
 
-        let endpoint = format!("/projects/{}/repository/branches", encoded_path);
+        let endpoint = format!("/projects/{encoded_path}/repository/branches");
         self.post(&endpoint, body).await?;
         Ok(())
     }

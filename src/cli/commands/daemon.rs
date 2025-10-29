@@ -7,7 +7,7 @@ use crate::ui::formatter::{colors, Status};
 use crate::utils::error::{MultiGitError, Result};
 use std::fs;
 use std::io::{BufRead, BufReader};
-use tracing::{info, warn};
+use tracing::info;
 
 /// Start the daemon
 pub async fn start(interval_minutes: u64) -> Result<()> {
@@ -33,7 +33,7 @@ pub async fn start(interval_minutes: u64) -> Result<()> {
     }
 
     println!("\n🚀 Starting MultiGit daemon...");
-    println!("  Interval: {}m ({}s)", interval_minutes, interval_seconds);
+    println!("  Interval: {interval_minutes}m ({interval_seconds}s)");
 
     // In a real implementation, we'd fork/daemonize here
     // For now, we'll run in foreground (user can use nohup/systemd)
@@ -135,15 +135,15 @@ pub fn logs(lines: usize) -> Result<()> {
         return Ok(());
     }
 
-    println!("\n📜 Daemon Logs (last {} lines):\n", lines);
+    println!("\n📜 Daemon Logs (last {lines} lines):\n");
     println!("{}", "=".repeat(60));
 
     // Read last N lines
     let file = fs::File::open(&log_file)
-        .map_err(|e| MultiGitError::other(format!("Failed to open log file: {}", e)))?;
+        .map_err(|e| MultiGitError::other(format!("Failed to open log file: {e}")))?;
 
     let reader = BufReader::new(file);
-    let all_lines: Vec<String> = reader.lines().filter_map(|line| line.ok()).collect();
+    let all_lines: Vec<String> = reader.lines().filter_map(std::result::Result::ok).collect();
 
     let start = if all_lines.len() > lines {
         all_lines.len() - lines
@@ -152,7 +152,7 @@ pub fn logs(lines: usize) -> Result<()> {
     };
 
     for line in &all_lines[start..] {
-        println!("{}", line);
+        println!("{line}");
     }
 
     println!("{}", "=".repeat(60));

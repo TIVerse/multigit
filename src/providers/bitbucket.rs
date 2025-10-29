@@ -36,9 +36,9 @@ impl BitbucketProvider {
         self.rate_limiter
             .acquire()
             .await
-            .map_err(|e| MultiGitError::Other(e))?;
+            .map_err(MultiGitError::Other)?;
 
-        let url = format!("https://api.bitbucket.org/2.0{}", endpoint);
+        let url = format!("https://api.bitbucket.org/2.0{endpoint}");
         debug!("Bitbucket GET: {}", url);
 
         retry_async(RetryConfig::for_api(), || async {
@@ -53,8 +53,7 @@ impl BitbucketProvider {
                 let status = response.status();
                 let error_text = response.text().await.unwrap_or_default();
                 return Err(MultiGitError::Other(format!(
-                    "Bitbucket API error: {} - {}",
-                    status, error_text
+                    "Bitbucket API error: {status} - {error_text}"
                 )));
             }
 
@@ -68,9 +67,9 @@ impl BitbucketProvider {
         self.rate_limiter
             .acquire()
             .await
-            .map_err(|e| MultiGitError::Other(e))?;
+            .map_err(MultiGitError::Other)?;
 
-        let url = format!("https://api.bitbucket.org/2.0{}", endpoint);
+        let url = format!("https://api.bitbucket.org/2.0{endpoint}");
         debug!("Bitbucket POST: {}", url);
 
         retry_async(RetryConfig::for_api(), || async {
@@ -86,8 +85,7 @@ impl BitbucketProvider {
                 let status = response.status();
                 let error_text = response.text().await.unwrap_or_default();
                 return Err(MultiGitError::Other(format!(
-                    "Bitbucket API error: {} - {}",
-                    status, error_text
+                    "Bitbucket API error: {status} - {error_text}"
                 )));
             }
 
@@ -100,7 +98,7 @@ impl BitbucketProvider {
 
 #[async_trait]
 impl Provider for BitbucketProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "bitbucket"
     }
 
@@ -152,12 +150,12 @@ impl Provider for BitbucketProvider {
             created_at: data["created_on"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
             updated_at: data["updated_on"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
         })
     }
@@ -194,12 +192,12 @@ impl Provider for BitbucketProvider {
             created_at: data["created_on"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
             updated_at: data["updated_on"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
         })
     }

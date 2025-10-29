@@ -12,28 +12,43 @@ use tracing::{debug, warn};
 /// Audit event types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AuditEventType {
+    /// Credential storage event
     CredentialStore,
+    /// Credential retrieval event
     CredentialRetrieve,
+    /// Credential deletion event
     CredentialDelete,
+    /// Remote addition event
     RemoteAdd,
+    /// Remote removal event
     RemoteRemove,
+    /// Push operation event
     Push,
+    /// Pull operation event
     Pull,
+    /// Sync operation event
     Sync,
 }
 
 /// An audit log entry
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuditEntry {
+    /// Timestamp when the event occurred
     pub timestamp: DateTime<Utc>,
+    /// Type of audit event
     pub event_type: AuditEventType,
+    /// User who performed the operation
     pub user: Option<String>,
+    /// Resource affected by the operation
     pub resource: String,
+    /// Whether the operation was successful
     pub success: bool,
+    /// Optional message with additional context
     pub message: Option<String>,
 }
 
 impl AuditEntry {
+    /// Create a new audit entry
     pub fn new(event_type: AuditEventType, resource: impl Into<String>, success: bool) -> Self {
         Self {
             timestamp: Utc::now(),
@@ -45,11 +60,13 @@ impl AuditEntry {
         }
     }
 
+    /// Add a message to the audit entry
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.message = Some(message.into());
         self
     }
 
+    /// Add a user to the audit entry
     pub fn with_user(mut self, user: impl Into<String>) -> Self {
         self.user = Some(user.into());
         self
@@ -64,11 +81,13 @@ pub struct AuditLogger {
 
 impl AuditLogger {
     /// Create a new audit logger
+    #[must_use] 
     pub fn new(log_path: PathBuf, enabled: bool) -> Self {
         Self { log_path, enabled }
     }
 
     /// Get default audit log path
+    #[must_use] 
     pub fn default_path() -> PathBuf {
         let mut path = dirs::config_dir().unwrap_or_else(|| PathBuf::from("."));
         path.push("multigit");
@@ -115,7 +134,7 @@ impl AuditLogger {
             }
         };
 
-        if let Err(e) = writeln!(file, "{}", json) {
+        if let Err(e) = writeln!(file, "{json}") {
             warn!("Failed to write audit log: {}", e);
         }
     }

@@ -4,7 +4,6 @@
 
 use crate::git::operations::GitOperations;
 use crate::utils::error::{MultiGitError, Result};
-use std::path::Path;
 use tracing::info;
 
 /// Clone a repository with optional mirror remotes
@@ -20,8 +19,8 @@ pub fn execute(url: String, path: Option<String>, mirrors: Vec<String>) -> Resul
     };
 
     println!("\n📥 Cloning repository...");
-    println!("   Source: {}", url);
-    println!("   Destination: {}\n", clone_path);
+    println!("   Source: {url}");
+    println!("   Destination: {clone_path}\n");
 
     // Perform the clone
     let git_ops = GitOperations::clone(&url, &clone_path)?;
@@ -33,15 +32,15 @@ pub fn execute(url: String, path: Option<String>, mirrors: Vec<String>) -> Resul
 
         for mirror in &mirrors {
             match add_mirror_remote(&git_ops, mirror, &extract_repo_name(&url)) {
-                Ok(_) => println!("✓ Added mirror: {}", mirror),
-                Err(e) => println!("⚠ Failed to add mirror {}: {}", mirror, e),
+                Ok(()) => println!("✓ Added mirror: {mirror}"),
+                Err(e) => println!("⚠ Failed to add mirror {mirror}: {e}"),
             }
         }
     }
 
     println!("\n✅ Clone complete!");
     println!("\n💡 Next steps:");
-    println!("   cd {}", clone_path);
+    println!("   cd {clone_path}");
     println!("   multigit init");
 
     Ok(())
@@ -60,7 +59,7 @@ fn extract_repo_name(url: &str) -> String {
 fn add_mirror_remote(git_ops: &GitOperations, mirror_name: &str, repo_name: &str) -> Result<()> {
     // This is a simplified version - in production you'd construct the full URL
     // based on the provider type and user configuration
-    let mirror_url = format!("https://{}.com/user/{}.git", mirror_name, repo_name);
+    let mirror_url = format!("https://{mirror_name}.com/user/{repo_name}.git");
 
     git_ops.add_remote(mirror_name, &mirror_url)?;
     Ok(())
@@ -78,7 +77,7 @@ pub fn execute_interactive(url: String) -> Result<()> {
         .with_prompt("Clone to directory")
         .default(default_path)
         .interact_text()
-        .map_err(|e| MultiGitError::Other(format!("Input error: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("Input error: {e}")))?;
 
     // Select mirror providers
     let providers = vec!["github", "gitlab", "bitbucket", "codeberg"];
@@ -86,7 +85,7 @@ pub fn execute_interactive(url: String) -> Result<()> {
         .with_prompt("Select mirror remotes (optional)")
         .items(&providers)
         .interact()
-        .map_err(|e| MultiGitError::Other(format!("Input error: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("Input error: {e}")))?;
 
     let mirrors: Vec<String> = selections
         .iter()

@@ -26,6 +26,7 @@ impl RateLimiter {
     /// # Arguments
     /// * `max_tokens` - Maximum number of tokens in the bucket
     /// * `refill_rate` - Number of tokens to add per second
+    #[must_use] 
     pub fn new(max_tokens: f64, refill_rate: f64) -> Self {
         Self {
             state: Arc::new(Mutex::new(RateLimiterState {
@@ -38,6 +39,7 @@ impl RateLimiter {
     }
 
     /// Create a rate limiter for GitHub API (5000 requests per hour)
+    #[must_use] 
     pub fn github() -> Self {
         // GitHub: 5000 requests per hour = ~1.39 per second
         // We use a slightly lower rate to be safe
@@ -45,12 +47,14 @@ impl RateLimiter {
     }
 
     /// Create a rate limiter for GitLab API (600 requests per minute)
+    #[must_use] 
     pub fn gitlab() -> Self {
         // GitLab: 600 requests per minute = 10 per second
         Self::new(600.0, 10.0)
     }
 
     /// Create a rate limiter for Bitbucket API (1000 requests per hour)
+    #[must_use] 
     pub fn bitbucket() -> Self {
         // Bitbucket: 1000 requests per hour = ~0.28 per second
         Self::new(1000.0, 0.27)
@@ -67,12 +71,11 @@ impl RateLimiter {
                     state.tokens -= 1.0;
                     debug!("Rate limiter: token acquired, {} remaining", state.tokens);
                     return Ok(());
-                } else {
-                    // Calculate how long to wait for the next token
-                    let tokens_needed = 1.0 - state.tokens;
-                    let wait_secs = tokens_needed / state.refill_rate;
-                    Duration::from_secs_f64(wait_secs)
                 }
+                // Calculate how long to wait for the next token
+                let tokens_needed = 1.0 - state.tokens;
+                let wait_secs = tokens_needed / state.refill_rate;
+                Duration::from_secs_f64(wait_secs)
             };
 
             warn!("Rate limiter: waiting {:?} for token", wait_time);
@@ -96,6 +99,7 @@ impl RateLimiter {
     }
 
     /// Get the number of available tokens
+    #[must_use] 
     pub fn available_tokens(&self) -> f64 {
         let mut state = self.state.lock().unwrap();
         state.refill();
@@ -135,7 +139,7 @@ mod tests {
         assert!(limiter.try_acquire());
 
         let remaining = limiter.available_tokens();
-        assert!(remaining < 3.0 && remaining >= 2.0);
+        assert!((2.0..3.0).contains(&remaining));
     }
 
     #[tokio::test]

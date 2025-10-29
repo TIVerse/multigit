@@ -21,7 +21,7 @@ pub fn execute(remote: Option<String>, branch: Option<String>) -> Result<()> {
     // Get remote to pull from
     let remote_name = remote.unwrap_or_else(|| "origin".to_string());
 
-    println!("\n⬇️  Pulling '{}' from {}...\n", branch_name, remote_name);
+    println!("\n⬇️  Pulling '{branch_name}' from {remote_name}...\n");
 
     // Check if working directory is clean
     if !git_ops.is_clean()? {
@@ -31,7 +31,7 @@ pub fn execute(remote: Option<String>, branch: Option<String>) -> Result<()> {
     }
 
     // Fetch from the remote
-    println!("📡 Fetching from {}...", remote_name);
+    println!("📡 Fetching from {remote_name}...");
     git_ops.fetch(&remote_name, &[])?;
     println!("✓ Fetch complete");
 
@@ -40,8 +40,8 @@ pub fn execute(remote: Option<String>, branch: Option<String>) -> Result<()> {
 
     if ahead > 0 && behind > 0 {
         println!("\n⚠️  Divergence detected!");
-        println!("   Local is {} commits ahead", ahead);
-        println!("   Remote is {} commits behind", behind);
+        println!("   Local is {ahead} commits ahead");
+        println!("   Remote is {behind} commits behind");
         println!("\n💡 Consider using 'multigit sync' to handle this situation");
         return Ok(());
     }
@@ -51,12 +51,12 @@ pub fn execute(remote: Option<String>, branch: Option<String>) -> Result<()> {
         return Ok(());
     }
 
-    println!("\n📥 Pulling {} commit(s)...", behind);
+    println!("\n📥 Pulling {behind} commit(s)...");
 
     // For now, we'll advise using git directly for the actual pull
     // This requires implementing merge/rebase logic
     println!("\n⚠️  Automatic pull merge not yet implemented.");
-    println!("Please use: git pull {} {}", remote_name, branch_name);
+    println!("Please use: git pull {remote_name} {branch_name}");
 
     Ok(())
 }

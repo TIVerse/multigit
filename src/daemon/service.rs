@@ -7,7 +7,7 @@ use crate::core::config::Config;
 use crate::daemon::scheduler::Scheduler;
 use crate::utils::error::{MultiGitError, Result};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process;
 use tokio::signal;
 use tracing::{debug, error, info, warn};
@@ -21,6 +21,7 @@ pub struct DaemonService {
 
 impl DaemonService {
     /// Create a new daemon service
+    #[must_use] 
     pub fn new(interval_seconds: u64) -> Self {
         let config_dir = dirs::config_dir().unwrap_or_else(|| PathBuf::from(".multigit"));
 
@@ -76,7 +77,7 @@ impl DaemonService {
 
         // Run the scheduler
         match scheduler.start(sync_task).await {
-            Ok(_) => {
+            Ok(()) => {
                 info!("Daemon scheduler stopped normally");
             }
             Err(e) => {
@@ -109,7 +110,7 @@ impl DaemonService {
 
             let pid = Pid::from_raw(pid as i32);
             match kill(pid, Signal::SIGTERM) {
-                Ok(_) => {
+                Ok(()) => {
                     info!("Sent SIGTERM to daemon process");
                     // Wait a bit for graceful shutdown
                     std::thread::sleep(std::time::Duration::from_secs(2));
@@ -119,8 +120,7 @@ impl DaemonService {
                         warn!("Daemon did not stop gracefully, sending SIGKILL");
                         if let Err(e) = kill(pid, Signal::SIGKILL) {
                             return Err(MultiGitError::daemon(format!(
-                                "Failed to kill daemon: {}",
-                                e
+                                "Failed to kill daemon: {e}"
                             )));
                         }
                     }
@@ -128,8 +128,7 @@ impl DaemonService {
                 Err(e) => {
                     error!("Failed to send signal: {}", e);
                     return Err(MultiGitError::daemon(format!(
-                        "Failed to stop daemon: {}",
-                        e
+                        "Failed to stop daemon: {e}"
                     )));
                 }
             }
@@ -159,13 +158,13 @@ impl DaemonService {
         // Check if process with this PID exists
         #[cfg(unix)]
         {
-            use nix::sys::signal::{kill, Signal};
+            use nix::sys::signal::kill;
             use nix::unistd::Pid;
 
             let pid = Pid::from_raw(pid as i32);
             // Use kill with NULL signal (0) to check if process exists
             match kill(pid, None) {
-                Ok(_) => Ok(true),
+                Ok(()) => Ok(true),
                 Err(nix::errno::Errno::ESRCH) => {
                     // Process doesn't exist, clean up stale PID file
                     let _ = fs::remove_file(&self.pid_file);
@@ -218,12 +217,12 @@ impl DaemonService {
     /// Read PID from file
     fn read_pid(&self) -> Result<u32> {
         let content = fs::read_to_string(&self.pid_file)
-            .map_err(|e| MultiGitError::daemon(format!("Failed to read PID file: {}", e)))?;
+            .map_err(|e| MultiGitError::daemon(format!("Failed to read PID file: {e}")))?;
 
         content
             .trim()
             .parse::<u32>()
-            .map_err(|e| MultiGitError::daemon(format!("Invalid PID in file: {}", e)))
+            .map_err(|e| MultiGitError::daemon(format!("Invalid PID in file: {e}")))
     }
 
     /// Cleanup daemon files
@@ -239,8 +238,11 @@ impl DaemonService {
 /// Daemon status information
 #[derive(Debug, Clone)]
 pub struct DaemonStatus {
+    /// Whether the daemon is running
     pub running: bool,
+    /// Process ID of the daemon
     pub pid: Option<u32>,
+    /// Path to the log file
     pub log_file: Option<PathBuf>,
 }
 
@@ -250,6 +252,7 @@ pub struct DaemonStatus {
 /// on libgit2 Repository type, which is not available in v1.0.
 /// For now, this logs what would be synced. Use `multigit sync` manually
 /// or configure a cron job to run the CLI command for actual syncing.
+#[allow(clippy::unused_async)]
 async fn perform_sync() -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
     debug!("Performing background sync check...");
 
@@ -285,7 +288,7 @@ impl Drop for DaemonService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
+    
 
     #[test]
     fn test_daemon_creation() {

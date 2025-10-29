@@ -13,6 +13,7 @@ pub struct RemoteManager<'repo> {
 
 impl<'repo> RemoteManager<'repo> {
     /// Create a new remote manager for a repository
+    #[must_use] 
     pub fn new(repo: &'repo Repository) -> Self {
         Self { repo }
     }
@@ -24,8 +25,7 @@ impl<'repo> RemoteManager<'repo> {
         // Check if remote already exists
         if self.exists(name)? {
             return Err(MultiGitError::Other(format!(
-                "Remote '{}' already exists. Use update to change the URL.",
-                name
+                "Remote '{name}' already exists. Use update to change the URL."
             )));
         }
 
@@ -91,7 +91,7 @@ impl<'repo> RemoteManager<'repo> {
 
         let url = remote
             .url()
-            .ok_or_else(|| MultiGitError::Other(format!("Remote '{}' has no URL", name)))?
+            .ok_or_else(|| MultiGitError::Other(format!("Remote '{name}' has no URL")))?
             .to_string();
 
         debug!("Remote '{}' URL: {}", name, url);
@@ -114,14 +114,13 @@ impl<'repo> RemoteManager<'repo> {
 
         if self.exists(new_name)? {
             return Err(MultiGitError::Other(format!(
-                "Remote '{}' already exists",
-                new_name
+                "Remote '{new_name}' already exists"
             )));
         }
 
         self.repo
             .remote_rename(old_name, new_name)
-            .map_err(|e| MultiGitError::GitError(e))?;
+            .map_err(MultiGitError::GitError)?;
 
         info!(
             "Successfully renamed remote '{}' to '{}'",
@@ -141,7 +140,7 @@ impl<'repo> RemoteManager<'repo> {
         let url = remote
             .pushurl()
             .or_else(|| remote.url())
-            .ok_or_else(|| MultiGitError::Other(format!("Remote '{}' has no URL", name)))?
+            .ok_or_else(|| MultiGitError::Other(format!("Remote '{name}' has no URL")))?
             .to_string();
 
         Ok(url)
@@ -159,7 +158,7 @@ pub mod url_utils {
         let host = url.host_str().ok_or("No host in URL")?;
         let path = url.path().trim_start_matches('/');
 
-        Ok(format!("git@{}:{}", host, path))
+        Ok(format!("git@{host}:{path}"))
     }
 
     /// Convert an SSH URL to HTTPS format
@@ -174,14 +173,14 @@ pub mod url_utils {
             let host = parts[0].trim_start_matches("git@");
             let path = parts[1];
 
-            return Ok(format!("https://{}/{}", host, path));
+            return Ok(format!("https://{host}/{path}"));
         }
 
         // Handle ssh://git@github.com/user/repo.git format
         if let Ok(url) = Url::parse(ssh_url) {
             if let Some(host) = url.host_str() {
                 let path = url.path().trim_start_matches('/');
-                return Ok(format!("https://{}/{}", host, path));
+                return Ok(format!("https://{host}/{path}"));
             }
         }
 
@@ -189,6 +188,7 @@ pub mod url_utils {
     }
 
     /// Extract repository name from URL
+    #[must_use] 
     pub fn extract_repo_name(url: &str) -> Option<String> {
         let path = if url.contains("://") {
             Url::parse(url).ok()?.path().to_string()
@@ -202,7 +202,7 @@ pub mod url_utils {
             .trim_start_matches('/')
             .trim_end_matches(".git")
             .split('/')
-            .last()?
+            .next_back()?
             .to_string();
 
         Some(name)

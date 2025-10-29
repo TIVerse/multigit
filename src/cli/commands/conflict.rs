@@ -12,7 +12,7 @@ use std::path::Path;
 use tracing::{debug, info, warn};
 
 /// Detect conflicts across all configured remotes
-pub async fn detect_conflicts() -> Result<()> {
+pub fn detect_conflicts() -> Result<()> {
     info!("Detecting conflicts across remotes");
 
     let config = Config::load()?;
@@ -31,8 +31,7 @@ pub async fn detect_conflicts() -> Result<()> {
     info!("Checking branch: {}", current_branch);
 
     println!(
-        "\n🔍 Checking for conflicts on branch '{}'...\n",
-        current_branch
+        "\n🔍 Checking for conflicts on branch '{current_branch}'...\n"
     );
 
     let mut conflicts_found = false;
@@ -62,11 +61,11 @@ pub async fn detect_conflicts() -> Result<()> {
                             "↓ Behind"
                         };
 
-                        println!("  {} {}", status, remote_name);
+                        println!("  {status} {remote_name}");
 
                         if ahead > 0 || behind > 0 {
-                            println!("      Local: {} commits ahead", ahead);
-                            println!("      Remote: {} commits ahead", behind);
+                            println!("      Local: {ahead} commits ahead");
+                            println!("      Remote: {behind} commits ahead");
 
                             if ahead > 0 && behind > 0 {
                                 println!(
@@ -85,14 +84,13 @@ pub async fn detect_conflicts() -> Result<()> {
                     }
                     Err(e) => {
                         warn!("Could not compare with remote {}: {}", remote_name, e);
-                        println!("  ✗ {} (error: {})", remote_name, e);
+                        println!("  ✗ {remote_name} (error: {e})");
                     }
                 }
             }
             Err(_) => {
                 interactive::print_warning(&format!(
-                    "Remote '{}' not configured in git. Run 'git remote add {} <url>'",
-                    remote_name, remote_name
+                    "Remote '{remote_name}' not configured in git. Run 'git remote add {remote_name} <url>'"
                 ));
             }
         }
@@ -107,15 +105,14 @@ pub async fn detect_conflicts() -> Result<()> {
         return Err(MultiGitError::conflict(
             "Conflicts detected across remotes".to_string(),
         ));
-    } else {
-        interactive::print_success("No conflicts detected");
     }
+    interactive::print_success("No conflicts detected");
 
     Ok(())
 }
 
-/// Resolve conflicts interactively
-pub async fn resolve_conflicts(strategy: Option<String>) -> Result<()> {
+/// Resolve detected conflicts using the specified strategy
+pub fn resolve_conflicts(strategy: ResolutionStrategy) -> Result<()> {
     info!("Resolving conflicts");
 
     let config = Config::load()?;
@@ -131,8 +128,7 @@ pub async fn resolve_conflicts(strategy: Option<String>) -> Result<()> {
     let current_branch = git_ops.get_current_branch()?;
 
     println!(
-        "\n🔧 Resolving conflicts on branch '{}'...\n",
-        current_branch
+        "\n🔧 Resolving conflicts on branch '{current_branch}'...\n"
     );
 
     // Detect conflicts first
@@ -146,8 +142,8 @@ pub async fn resolve_conflicts(strategy: Option<String>) -> Result<()> {
         if let Ok((ahead, behind)) = git_ops.compare_with_remote(remote_name, &current_branch) {
             if ahead > 0 && behind > 0 {
                 conflicts.push(Conflict::new(current_branch.clone(), ahead, behind));
-                println!("  ⚠ Conflict detected with '{}'", remote_name);
-                println!("      {} commits ahead, {} commits behind", ahead, behind);
+                println!("  ⚠ Conflict detected with '{remote_name}'");
+                println!("      {ahead} commits ahead, {behind} commits behind");
             }
         }
     }
@@ -160,15 +156,7 @@ pub async fn resolve_conflicts(strategy: Option<String>) -> Result<()> {
     println!();
 
     // Determine resolution strategy
-    let resolution_strategy = if let Some(strat) = strategy {
-        parse_strategy(&strat)?
-    } else {
-        // Interactive strategy selection
-        let strategy_str = interactive::select_resolution_strategy()?;
-        parse_strategy(&strategy_str)?
-    };
-
-    let resolver = ConflictResolver::new(resolution_strategy);
+    let resolver = ConflictResolver::new(strategy);
 
     // Apply resolution
     for conflict in &conflicts {
@@ -218,8 +206,8 @@ pub async fn resolve_conflicts(strategy: Option<String>) -> Result<()> {
     Ok(())
 }
 
-/// Set primary remote for conflict resolution
-pub async fn set_primary_remote(remote_name: String) -> Result<()> {
+/// Set the primary remote for conflict resolution
+pub fn set_primary_remote(remote_name: String) -> Result<()> {
     info!("Setting primary remote: {}", remote_name);
 
     let mut config = Config::load()?;
@@ -234,7 +222,7 @@ pub async fn set_primary_remote(remote_name: String) -> Result<()> {
             config
                 .remotes
                 .keys()
-                .map(|k| k.as_str())
+                .map(std::string::String::as_str)
                 .collect::<Vec<_>>()
                 .join(", ")
         )));
@@ -245,29 +233,27 @@ pub async fn set_primary_remote(remote_name: String) -> Result<()> {
     config.save()?;
 
     interactive::print_success(&format!(
-        "Primary remote set to '{}' for conflict resolution",
-        remote_lower
+        "Primary remote set to '{remote_lower}' for conflict resolution"
     ));
 
     println!(
-        "\nWhen conflicts occur, changes from '{}' will be preferred.",
-        remote_lower
+        "\nWhen conflicts occur, changes from '{remote_lower}' will be preferred."
     );
 
     Ok(())
 }
 
 /// Show current conflict resolution strategy
-pub async fn show_strategy() -> Result<()> {
+pub fn show_strategy() -> Result<()> {
     let config = Config::load()?;
 
     println!("\n🔧 Current Conflict Resolution Configuration:\n");
 
     let strategy = config.sync.strategy.to_string();
-    println!("  Strategy: {}", strategy);
+    println!("  Strategy: {strategy}");
 
     if let Some(primary) = &config.sync.primary_source {
-        println!("  Primary Source: {}", primary);
+        println!("  Primary Source: {primary}");
     } else {
         println!("  Primary Source: Not set");
     }
@@ -285,8 +271,8 @@ pub async fn show_strategy() -> Result<()> {
     Ok(())
 }
 
-/// Parse strategy string into ResolutionStrategy enum
-fn parse_strategy(strategy: &str) -> Result<ResolutionStrategy> {
+/// Parse strategy string into `ResolutionStrategy` enum
+pub fn parse_strategy(strategy: &str) -> Result<ResolutionStrategy> {
     match strategy.to_lowercase().as_str() {
         "ours" | "local" => Ok(ResolutionStrategy::FastForwardOnly),
         "theirs" | "remote" => Ok(ResolutionStrategy::PreferRemote),
@@ -295,14 +281,14 @@ fn parse_strategy(strategy: &str) -> Result<ResolutionStrategy> {
         "force" => Ok(ResolutionStrategy::Force),
         "fast-forward" => Ok(ResolutionStrategy::FastForwardOnly),
         _ => Err(MultiGitError::other(format!(
-            "Invalid strategy '{}'. Valid strategies: ours, theirs, primary, manual, force",
-            strategy
+            "Invalid strategy '{strategy}'. Valid strategies: ours, theirs, primary, manual, force"
         ))),
     }
 }
 
 /// Remote state for conflict detection
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct RemoteState {
     name: String,
     ahead: usize,

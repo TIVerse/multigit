@@ -5,7 +5,6 @@
 
 use crate::utils::error::{MultiGitError, Result};
 use dialoguer::{theme::ColorfulTheme, Confirm, Input, Password, Select};
-use std::io::{self, Write};
 
 /// Supported provider types for selection
 const PROVIDERS: &[&str] = &["github", "gitlab", "bitbucket", "codeberg", "gitea"];
@@ -17,7 +16,7 @@ pub fn prompt_provider() -> Result<String> {
         .items(PROVIDERS)
         .default(0)
         .interact()
-        .map_err(|e| MultiGitError::other(format!("Provider selection failed: {}", e)))?;
+        .map_err(|e| MultiGitError::other(format!("Provider selection failed: {e}")))?;
 
     Ok(PROVIDERS[selection].to_string())
 }
@@ -25,9 +24,9 @@ pub fn prompt_provider() -> Result<String> {
 /// Prompt for username input
 pub fn prompt_username(provider: &str) -> Result<String> {
     let username = Input::<String>::with_theme(&ColorfulTheme::default())
-        .with_prompt(format!("Enter your {} username", provider))
+        .with_prompt(format!("Enter your {provider} username"))
         .interact_text()
-        .map_err(|e| MultiGitError::other(format!("Username input failed: {}", e)))?;
+        .map_err(|e| MultiGitError::other(format!("Username input failed: {e}")))?;
 
     if username.trim().is_empty() {
         return Err(MultiGitError::other("Username cannot be empty".to_string()));
@@ -68,9 +67,9 @@ pub fn prompt_token(provider: &str) -> Result<String> {
     println!();
 
     let token = Password::with_theme(&ColorfulTheme::default())
-        .with_prompt(format!("Enter your {} token/password", provider))
+        .with_prompt(format!("Enter your {provider} token/password"))
         .interact()
-        .map_err(|e| MultiGitError::other(format!("Token input failed: {}", e)))?;
+        .map_err(|e| MultiGitError::other(format!("Token input failed: {e}")))?;
 
     if token.trim().is_empty() {
         return Err(MultiGitError::other("Token cannot be empty".to_string()));
@@ -89,7 +88,7 @@ pub fn prompt_api_url(provider: &str) -> Result<Option<String>> {
         .with_prompt("Use custom/self-hosted instance?")
         .default(false)
         .interact()
-        .map_err(|e| MultiGitError::other(format!("Confirmation failed: {}", e)))?;
+        .map_err(|e| MultiGitError::other(format!("Confirmation failed: {e}")))?;
 
     if !use_custom {
         return Ok(None);
@@ -98,7 +97,7 @@ pub fn prompt_api_url(provider: &str) -> Result<Option<String>> {
     let url = Input::<String>::with_theme(&ColorfulTheme::default())
         .with_prompt("Enter API URL (e.g., https://gitea.example.com)")
         .interact_text()
-        .map_err(|e| MultiGitError::other(format!("URL input failed: {}", e)))?;
+        .map_err(|e| MultiGitError::other(format!("URL input failed: {e}")))?;
 
     if url.trim().is_empty() {
         return Ok(None);
@@ -113,7 +112,7 @@ pub fn confirm(message: &str) -> Result<bool> {
         .with_prompt(message)
         .default(false)
         .interact()
-        .map_err(|e| MultiGitError::other(format!("Confirmation failed: {}", e)))
+        .map_err(|e| MultiGitError::other(format!("Confirmation failed: {e}")))
 }
 
 /// Prompt for text input
@@ -127,7 +126,7 @@ pub fn prompt_text(prompt: &str, default: Option<&str>) -> Result<String> {
 
     input
         .interact_text()
-        .map_err(|e| MultiGitError::other(format!("Input failed: {}", e)))
+        .map_err(|e| MultiGitError::other(format!("Input failed: {e}")))
 }
 
 /// Prompt for repository name
@@ -142,7 +141,7 @@ pub fn prompt_repo_name(default: Option<&str>) -> Result<String> {
             .with_prompt("Repository name")
             .interact_text()
     }
-    .map_err(|e| MultiGitError::other(format!("Repository name input failed: {}", e)))?;
+    .map_err(|e| MultiGitError::other(format!("Repository name input failed: {e}")))?;
 
     if repo_name.trim().is_empty() {
         return Err(MultiGitError::other(
@@ -167,7 +166,7 @@ pub fn prompt_repo_description() -> Result<Option<String>> {
         .with_prompt("Repository description (optional)")
         .allow_empty(true)
         .interact_text()
-        .map_err(|e| MultiGitError::other(format!("Description input failed: {}", e)))?;
+        .map_err(|e| MultiGitError::other(format!("Description input failed: {e}")))?;
 
     if description.trim().is_empty() {
         Ok(None)
@@ -184,7 +183,7 @@ pub fn prompt_repo_visibility() -> Result<bool> {
         .items(choices)
         .default(1) // Default to private
         .interact()
-        .map_err(|e| MultiGitError::other(format!("Visibility selection failed: {}", e)))?;
+        .map_err(|e| MultiGitError::other(format!("Visibility selection failed: {e}")))?;
 
     Ok(selection == 1) // true if Private
 }
@@ -203,7 +202,7 @@ pub fn select_resolution_strategy() -> Result<String> {
         .items(strategies)
         .default(3) // Default to manual
         .interact()
-        .map_err(|e| MultiGitError::other(format!("Strategy selection failed: {}", e)))?;
+        .map_err(|e| MultiGitError::other(format!("Strategy selection failed: {e}")))?;
 
     let strategy = match selection {
         0 => "ours",
@@ -231,7 +230,7 @@ pub fn select_remote(remotes: &[String]) -> Result<String> {
         .items(remotes)
         .default(0)
         .interact()
-        .map_err(|e| MultiGitError::other(format!("Remote selection failed: {}", e)))?;
+        .map_err(|e| MultiGitError::other(format!("Remote selection failed: {e}")))?;
 
     Ok(remotes[selection].clone())
 }
@@ -257,22 +256,22 @@ fn is_valid_repo_name(name: &str) -> bool {
 
 /// Print a warning message
 pub fn print_warning(message: &str) {
-    eprintln!("⚠️  {}", message);
+    eprintln!("⚠️  {message}");
 }
 
 /// Print an error message
 pub fn print_error(message: &str) {
-    eprintln!("❌ {}", message);
+    eprintln!("❌ {message}");
 }
 
 /// Print a success message
 pub fn print_success(message: &str) {
-    println!("✅ {}", message);
+    println!("✅ {message}");
 }
 
 /// Print an info message
 pub fn print_info(message: &str) {
-    println!("ℹ️  {}", message);
+    println!("ℹ️  {message}");
 }
 
 #[cfg(test)]

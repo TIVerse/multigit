@@ -111,14 +111,8 @@ fn test_colors_dim() {
 #[test]
 fn test_table_creation() {
     let mut table = Table::new(vec!["Name".to_string(), "Status".to_string()]);
-    assert_eq!(
-        table.add_row(vec!["test1".to_string(), "active".to_string()]),
-        ()
-    );
-    assert_eq!(
-        table.add_row(vec!["test2".to_string(), "inactive".to_string()]),
-        ()
-    );
+    table.add_row(vec!["test1".to_string(), "active".to_string()]);
+    table.add_row(vec!["test2".to_string(), "inactive".to_string()]);
 
     // Just test it doesn't panic
     table.print();

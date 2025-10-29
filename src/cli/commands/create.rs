@@ -9,18 +9,18 @@ use crate::providers::{
 };
 use crate::utils::error::{MultiGitError, Result};
 use dialoguer::{Confirm, Input};
-use tracing::{info, warn};
+use tracing::info;
 
 /// Create a repository on all configured platforms
 pub async fn execute(name: String, description: Option<String>, private: bool) -> Result<()> {
     info!("Creating repository: {}", name);
 
-    println!("\n📦 Creating repository '{}' on all platforms...\n", name);
+    println!("\n📦 Creating repository '{name}' on all platforms...\n");
 
     // Get repository configuration
     let repo_config = RepoConfig {
         name: name.clone(),
-        description: description.unwrap_or_else(|| String::new()),
+        description: description.unwrap_or_default(),
         private,
     };
 
@@ -35,11 +35,11 @@ pub async fn execute(name: String, description: Option<String>, private: bool) -
         match create_on_github(&token, &repo_config).await {
             Ok(url) => {
                 println!("✓ GitHub: Created successfully");
-                println!("  URL: {}", url);
+                println!("  URL: {url}");
                 results.push(("github", true));
             }
             Err(e) => {
-                println!("✗ GitHub: Failed - {}", e);
+                println!("✗ GitHub: Failed - {e}");
                 results.push(("github", false));
             }
         }
@@ -52,11 +52,11 @@ pub async fn execute(name: String, description: Option<String>, private: bool) -
         match create_on_gitlab(&token, &repo_config).await {
             Ok(url) => {
                 println!("✓ GitLab: Created successfully");
-                println!("  URL: {}", url);
+                println!("  URL: {url}");
                 results.push(("gitlab", true));
             }
             Err(e) => {
-                println!("✗ GitLab: Failed - {}", e);
+                println!("✗ GitLab: Failed - {e}");
                 results.push(("gitlab", false));
             }
         }
@@ -69,11 +69,11 @@ pub async fn execute(name: String, description: Option<String>, private: bool) -
         match create_on_bitbucket("user", &password, &repo_config).await {
             Ok(url) => {
                 println!("✓ Bitbucket: Created successfully");
-                println!("  URL: {}", url);
+                println!("  URL: {url}");
                 results.push(("bitbucket", true));
             }
             Err(e) => {
-                println!("✗ Bitbucket: Failed - {}", e);
+                println!("✗ Bitbucket: Failed - {e}");
                 results.push(("bitbucket", false));
             }
         }
@@ -86,8 +86,7 @@ pub async fn execute(name: String, description: Option<String>, private: bool) -
     let total_count = results.len();
 
     println!(
-        "\n📊 Summary: Created on {}/{} platforms",
-        success_count, total_count
+        "\n📊 Summary: Created on {success_count}/{total_count} platforms"
     );
 
     if success_count > 0 {
@@ -105,7 +104,7 @@ async fn create_on_github(token: &str, config: &RepoConfig) -> Result<String> {
     let repo = provider
         .create_repo(config.clone())
         .await
-        .map_err(|e| MultiGitError::Other(format!("GitHub API error: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("GitHub API error: {e}")))?;
     Ok(repo.html_url.unwrap_or(repo.url))
 }
 
@@ -115,7 +114,7 @@ async fn create_on_gitlab(token: &str, config: &RepoConfig) -> Result<String> {
     let repo = provider
         .create_repo(config.clone())
         .await
-        .map_err(|e| MultiGitError::Other(format!("GitLab API error: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("GitLab API error: {e}")))?;
     Ok(repo.html_url.unwrap_or(repo.url))
 }
 
@@ -129,7 +128,7 @@ async fn create_on_bitbucket(
     let repo = provider
         .create_repo(config.clone())
         .await
-        .map_err(|e| MultiGitError::Other(format!("Bitbucket API error: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("Bitbucket API error: {e}")))?;
     Ok(repo.html_url.unwrap_or(repo.url))
 }
 
@@ -140,19 +139,19 @@ pub async fn execute_interactive() -> Result<()> {
     let name: String = Input::new()
         .with_prompt("Repository name")
         .interact_text()
-        .map_err(|e| MultiGitError::Other(format!("Input error: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("Input error: {e}")))?;
 
     let description: String = Input::new()
         .with_prompt("Description (optional)")
         .allow_empty(true)
         .interact_text()
-        .map_err(|e| MultiGitError::Other(format!("Input error: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("Input error: {e}")))?;
 
     let private = Confirm::new()
         .with_prompt("Make repository private?")
         .default(true)
         .interact()
-        .map_err(|e| MultiGitError::Other(format!("Input error: {}", e)))?;
+        .map_err(|e| MultiGitError::Other(format!("Input error: {e}")))?;
 
     let desc = if description.is_empty() {
         None

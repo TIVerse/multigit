@@ -45,7 +45,7 @@ pub async fn execute(branch: Option<String>, dry_run: bool) -> Result<()> {
             enabled.len()
         );
         for remote in &enabled {
-            println!("  - {}", remote);
+            println!("  - {remote}");
         }
         println!("\n[DRY RUN] No changes were made.");
         return Ok(());

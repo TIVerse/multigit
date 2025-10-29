@@ -290,7 +290,7 @@ fn main() -> Result<()> {
     let runtime = tokio::runtime::Runtime::new()?;
 
     match cli.command {
-        Commands::Init { no_interactive } => {
+        Commands::Init { no_interactive: _ } => {
             use multigit::cli::commands::init;
             init::execute(".")?;
         }
@@ -328,7 +328,7 @@ fn main() -> Result<()> {
             runtime.block_on(fetch::execute(remotes, all))?;
         }
 
-        Commands::Sync { force } => {
+        Commands::Sync { force: _ } => {
             use multigit::cli::commands::sync;
             runtime.block_on(sync::execute(None, false))?;
         }
@@ -364,10 +364,10 @@ fn main() -> Result<()> {
                     message,
                     sign,
                 } => {
-                    runtime.block_on(commands::create(name, message, sign))?;
+                    commands::create(name, message, sign)?;
                 }
                 TagCommands::Delete { name } => {
-                    runtime.block_on(commands::delete(name))?;
+                    commands::delete(name)?;
                 }
             }
         }
@@ -380,11 +380,12 @@ fn main() -> Result<()> {
         Commands::Conflict { action } => {
             use multigit::cli::commands::conflict;
             match action {
-                ConflictCommands::List => {
-                    runtime.block_on(conflict::detect_conflicts())?;
+                ConflictAction::List => {
+                    conflict::detect_conflicts()?;
                 }
-                ConflictCommands::Resolve => {
-                    runtime.block_on(conflict::resolve_conflicts(None))?;
+                ConflictAction::Resolve { strategy } => {
+                    let strat = conflict::parse_strategy(strategy)?;
+                    conflict::resolve_conflicts(strat)?;
                 }
             }
         }
@@ -430,11 +431,11 @@ fn handle_remote_command(action: RemoteCommands) -> Result<()> {
         }
 
         RemoteCommands::List { detailed } => {
-            runtime.block_on(remote::list_remotes(detailed))?;
+            remote::list_remotes(detailed)?;
         }
 
         RemoteCommands::Remove { name } => {
-            runtime.block_on(remote::remove_remote(name, true))?;
+            remote::remove_remote(name, true)?;
         }
 
         RemoteCommands::Test { name } => {

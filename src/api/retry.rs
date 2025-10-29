@@ -32,6 +32,7 @@ impl Default for RetryConfig {
 
 impl RetryConfig {
     /// Create a retry config for API requests
+    #[must_use] 
     pub fn for_api() -> Self {
         Self {
             max_attempts: 5,
@@ -42,6 +43,7 @@ impl RetryConfig {
     }
 
     /// Create a retry config for network operations
+    #[must_use] 
     pub fn for_network() -> Self {
         Self {
             max_attempts: 3,
@@ -52,9 +54,11 @@ impl RetryConfig {
     }
 
     /// Calculate backoff duration for a given attempt
+    #[must_use] 
     pub fn backoff_duration(&self, attempt: usize) -> Duration {
+        let attempt_exp = attempt.try_into().unwrap_or(i32::MAX);
         let backoff_secs =
-            self.initial_backoff.as_secs_f64() * self.backoff_multiplier.powi(attempt as i32);
+            self.initial_backoff.as_secs_f64() * self.backoff_multiplier.powi(attempt_exp);
 
         let backoff = Duration::from_secs_f64(backoff_secs);
         backoff.min(self.max_backoff)

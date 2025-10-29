@@ -1,11 +1,11 @@
-//! Error types for MultiGit
+//! Error types for `MultiGit`
 //!
 //! This module defines all error types used throughout the application,
 //! with detailed messages to help users diagnose and fix issues.
 
 use thiserror::Error;
 
-/// Main error type for MultiGit operations
+/// Main error type for `MultiGit` operations
 #[derive(Debug, Error)]
 pub enum MultiGitError {
     /// Git operation failed
@@ -18,7 +18,12 @@ pub enum MultiGitError {
 
     /// Authentication failure
     #[error("Authentication failed for {provider}: {reason}")]
-    AuthError { provider: String, reason: String },
+    AuthError {
+        /// Provider name
+        provider: String,
+        /// Reason for failure
+        reason: String
+    },
 
     /// Repository not found
     #[error("Repository not found: {0}")]
@@ -34,7 +39,12 @@ pub enum MultiGitError {
 
     /// Rate limit exceeded
     #[error("Rate limit exceeded for {provider}. Please try again in {minutes} minutes.")]
-    RateLimitError { provider: String, minutes: u32 },
+    RateLimitError {
+        /// Provider name
+        provider: String,
+        /// Minutes until reset
+        minutes: u32
+    },
 
     /// Configuration error
     #[error("Configuration error: {0}")]
@@ -66,7 +76,12 @@ pub enum MultiGitError {
 
     /// Provider-specific error
     #[error("Provider error ({provider}): {message}")]
-    ProviderError { provider: String, message: String },
+    ProviderError {
+        /// Provider name
+        provider: String,
+        /// Error message
+        message: String
+    },
 
     /// Daemon error
     #[error("Daemon error: {0}")]
@@ -141,25 +156,24 @@ impl MultiGitError {
     }
 
     /// Get a user-friendly error message with troubleshooting hints
+    #[must_use] 
     pub fn user_message(&self) -> String {
         match self {
             Self::AuthError { provider, reason } => {
                 format!(
-                    "Authentication failed for {}.\n\n\
-                     Reason: {}\n\n\
+                    "Authentication failed for {provider}.\n\n\
+                     Reason: {reason}\n\n\
                      Troubleshooting:\n\
-                     1. Verify your credentials with: multigit remote test {}\n\
-                     2. Update your token with: multigit remote update {}\n\
+                     1. Verify your credentials with: multigit remote test {provider}\n\
+                     2. Update your token with: multigit remote update {provider}\n\
                      3. Check token permissions on the provider's website\n\
-                     4. Ensure your token hasn't expired",
-                    provider, reason, provider, provider
+                     4. Ensure your token hasn't expired"
                 )
             }
             Self::RateLimitError { provider, minutes } => {
                 format!(
-                    "Rate limit exceeded for {}. Please wait {} minutes before trying again.\n\n\
-                     Tip: Use 'multigit status --remote {}' to check rate limit status.",
-                    provider, minutes, provider
+                    "Rate limit exceeded for {provider}. Please wait {minutes} minutes before trying again.\n\n\
+                     Tip: Use 'multigit status --remote {provider}' to check rate limit status."
                 )
             }
             Self::NotInitialized => "MultiGit is not initialized in this repository.\n\n\
@@ -167,20 +181,18 @@ impl MultiGitError {
                 .to_string(),
             Self::ConfigError(msg) => {
                 format!(
-                    "Configuration error: {}\n\n\
+                    "Configuration error: {msg}\n\n\
                      Check your configuration files:\n\
                      - Repository: .multigit/config.toml\n\
                      - User: ~/.config/multigit/config.toml\n\n\
-                     Run 'multigit doctor' to diagnose configuration issues.",
-                    msg
+                     Run 'multigit doctor' to diagnose configuration issues."
                 )
             }
             Self::ConflictError(msg) => {
                 format!(
-                    "Conflict detected: {}\n\n\
+                    "Conflict detected: {msg}\n\n\
                      Use 'multigit conflict list' to see all conflicts.\n\
-                     Use 'multigit conflict resolve' for interactive resolution.",
-                    msg
+                     Use 'multigit conflict resolve' for interactive resolution."
                 )
             }
             _ => self.to_string(),
@@ -188,11 +200,13 @@ impl MultiGitError {
     }
 
     /// Check if this error is retryable
+    #[must_use] 
     pub fn is_retryable(&self) -> bool {
         matches!(self, Self::NetworkError(_) | Self::RateLimitError { .. })
     }
 
     /// Check if this is a authentication-related error
+    #[must_use] 
     pub fn is_auth_error(&self) -> bool {
         matches!(self, Self::AuthError { .. } | Self::KeyringError(_))
     }
@@ -205,7 +219,7 @@ impl From<keyring::Error> for MultiGitError {
     }
 }
 
-/// Result type alias for MultiGit operations
+/// Result type alias for `MultiGit` operations
 pub type Result<T> = std::result::Result<T, MultiGitError>;
 
 #[cfg(test)]

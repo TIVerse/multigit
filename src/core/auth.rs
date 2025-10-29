@@ -15,8 +15,11 @@ use tracing::{debug, info};
 /// Authentication backend
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AuthBackend {
+    /// OS keyring (secure)
     Keyring,
+    /// Encrypted file storage
     EncryptedFile,
+    /// Environment variables
     Environment,
 }
 
@@ -30,6 +33,7 @@ pub struct AuthManager {
 
 impl AuthManager {
     /// Create a new auth manager
+    #[must_use] 
     pub fn new(preferred_backend: AuthBackend, enable_audit: bool) -> Self {
         let keyring = if matches!(preferred_backend, AuthBackend::Keyring) {
             Some(KeyringManager::new())
@@ -81,7 +85,7 @@ impl AuthManager {
         if let Some(ref logger) = self.audit_logger {
             let entry = AuditEntry::new(
                 AuditEventType::CredentialStore,
-                format!("{}:{}", provider, username),
+                format!("{provider}:{username}"),
                 result.is_ok(),
             );
             logger.log(entry);
@@ -125,7 +129,7 @@ impl AuthManager {
         if let Some(ref logger) = self.audit_logger {
             let entry = AuditEntry::new(
                 AuditEventType::CredentialRetrieve,
-                format!("{}:{}", provider, username),
+                format!("{provider}:{username}"),
                 result.is_ok(),
             );
             logger.log(entry);
@@ -134,7 +138,7 @@ impl AuthManager {
         result
     }
 
-    /// Remove a credential (alias for delete_credential)
+    /// Remove a credential (alias for `delete_credential`)
     pub fn remove_credential(&self, provider: &str, username: &str) -> Result<()> {
         self.delete_credential(provider, username)
     }
@@ -169,7 +173,7 @@ impl AuthManager {
         if let Some(ref logger) = self.audit_logger {
             let entry = AuditEntry::new(
                 AuditEventType::CredentialDelete,
-                format!("{}:{}", provider, username),
+                format!("{provider}:{username}"),
                 result.is_ok(),
             );
             logger.log(entry);
@@ -207,53 +211,53 @@ impl EncryptedCredentialStore {
         }
 
         let encrypted = std::fs::read(&self.path)
-            .map_err(|e| MultiGitError::Other(format!("Failed to read store: {}", e)))?;
+            .map_err(|e| MultiGitError::Other(format!("Failed to read store: {e}")))?;
 
         let decrypted = encryption::decrypt_with_passphrase(&encrypted, &self.passphrase)?;
         let json = String::from_utf8(decrypted)
-            .map_err(|e| MultiGitError::Other(format!("Invalid UTF-8: {}", e)))?;
+            .map_err(|e| MultiGitError::Other(format!("Invalid UTF-8: {e}")))?;
 
         serde_json::from_str(&json)
-            .map_err(|e| MultiGitError::Other(format!("Invalid JSON: {}", e)))
+            .map_err(|e| MultiGitError::Other(format!("Invalid JSON: {e}")))
     }
 
     fn save_store(&self, store: &HashMap<String, String>) -> Result<()> {
         // Ensure parent directory exists
         if let Some(parent) = self.path.parent() {
             std::fs::create_dir_all(parent)
-                .map_err(|e| MultiGitError::Other(format!("Failed to create dir: {}", e)))?;
+                .map_err(|e| MultiGitError::Other(format!("Failed to create dir: {e}")))?;
         }
 
         let json = serde_json::to_string(store)
-            .map_err(|e| MultiGitError::Other(format!("JSON serialize failed: {}", e)))?;
+            .map_err(|e| MultiGitError::Other(format!("JSON serialize failed: {e}")))?;
 
         let encrypted = encryption::encrypt_with_passphrase(json.as_bytes(), &self.passphrase)?;
 
         std::fs::write(&self.path, encrypted)
-            .map_err(|e| MultiGitError::Other(format!("Failed to write store: {}", e)))?;
+            .map_err(|e| MultiGitError::Other(format!("Failed to write store: {e}")))?;
 
         Ok(())
     }
 
     fn store(&self, provider: &str, username: &str, token: &str) -> Result<()> {
         let mut store = self.load_store()?;
-        let key = format!("{}:{}", provider, username);
+        let key = format!("{provider}:{username}");
         store.insert(key, token.to_string());
         self.save_store(&store)
     }
 
     fn retrieve(&self, provider: &str, username: &str) -> Result<String> {
         let store = self.load_store()?;
-        let key = format!("{}:{}", provider, username);
+        let key = format!("{provider}:{username}");
         store
             .get(&key)
             .cloned()
-            .ok_or_else(|| MultiGitError::Other(format!("Credential not found: {}", key)))
+            .ok_or_else(|| MultiGitError::Other(format!("Credential not found: {key}")))
     }
 
     fn delete(&self, provider: &str, username: &str) -> Result<()> {
         let mut store = self.load_store()?;
-        let key = format!("{}:{}", provider, username);
+        let key = format!("{provider}:{username}");
         store.remove(&key);
         self.save_store(&store)
     }

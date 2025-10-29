@@ -4,7 +4,6 @@
 //! Supports both human-readable and machine-readable formats.
 
 use serde::Serialize;
-use std::io::{self, Write};
 
 /// Output format type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,6 +25,7 @@ pub struct Table {
 
 impl Table {
     /// Create a new table with headers
+    #[must_use] 
     pub fn new(headers: Vec<String>) -> Self {
         Self {
             headers,
@@ -35,6 +35,7 @@ impl Table {
     }
 
     /// Disable colored output
+    #[must_use] 
     pub fn no_colors(mut self) -> Self {
         self.colors_enabled = false;
         self
@@ -106,62 +107,79 @@ impl Table {
 pub mod colors {
     /// Color codes
     pub const RESET: &str = "\x1b[0m";
+    /// Bold text style
     pub const BOLD: &str = "\x1b[1m";
+    /// Dim text style
     pub const DIM: &str = "\x1b[2m";
 
     // Foreground colors
+    /// Black color
     pub const BLACK: &str = "\x1b[30m";
+    /// Red color
     pub const RED: &str = "\x1b[31m";
+    /// Green color
     pub const GREEN: &str = "\x1b[32m";
+    /// Yellow color
     pub const YELLOW: &str = "\x1b[33m";
+    /// Blue color
     pub const BLUE: &str = "\x1b[34m";
+    /// Magenta color
     pub const MAGENTA: &str = "\x1b[35m";
+    /// Cyan color
     pub const CYAN: &str = "\x1b[36m";
+    /// White color
     pub const WHITE: &str = "\x1b[37m";
 
     /// Apply color to text
+    #[must_use] 
     pub fn colorize(text: &str, color: &str, enabled: bool) -> String {
         if enabled {
-            format!("{}{}{}", color, text, RESET)
+            format!("{color}{text}{RESET}")
         } else {
             text.to_string()
         }
     }
 
     /// Make text bold
+    #[must_use] 
     pub fn bold(text: &str, enabled: bool) -> String {
         if enabled {
-            format!("{}{}{}", BOLD, text, RESET)
+            format!("{BOLD}{text}{RESET}")
         } else {
             text.to_string()
         }
     }
 
     /// Make text dim
+    #[must_use] 
     pub fn dim(text: &str, enabled: bool) -> String {
         if enabled {
-            format!("{}{}{}", DIM, text, RESET)
+            format!("{DIM}{text}{RESET}")
         } else {
             text.to_string()
         }
     }
 
     /// Success text (green)
+    #[must_use] 
     pub fn success(text: &str, enabled: bool) -> String {
         colorize(text, GREEN, enabled)
     }
 
     /// Error text (red)
+    #[must_use] 
     pub fn error(text: &str, enabled: bool) -> String {
         colorize(text, RED, enabled)
     }
 
     /// Warning text (yellow)
+    #[must_use] 
     pub fn warning(text: &str, enabled: bool) -> String {
         colorize(text, YELLOW, enabled)
     }
 
     /// Info text (cyan)
+    #[must_use] 
     pub fn info(text: &str, enabled: bool) -> String {
         colorize(text, CYAN, enabled)
     }
@@ -185,14 +203,15 @@ pub fn format_output<T: Serialize>(
 /// Print data in the specified format
 pub fn print_output<T: Serialize>(data: &T, format: OutputFormat) -> Result<(), serde_json::Error> {
     let output = format_output(data, format)?;
-    println!("{}", output);
+    println!("{output}");
     Ok(())
 }
 
 /// Format a duration in human-readable form
+#[must_use] 
 pub fn format_duration(seconds: u64) -> String {
     if seconds < 60 {
-        format!("{}s", seconds)
+        format!("{seconds}s")
     } else if seconds < 3600 {
         format!("{}m {}s", seconds / 60, seconds % 60)
     } else {
@@ -201,6 +220,7 @@ pub fn format_duration(seconds: u64) -> String {
 }
 
 /// Format bytes in human-readable form
+#[must_use] 
 pub fn format_bytes(bytes: u64) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
     let mut size = bytes as f64;
@@ -226,9 +246,9 @@ pub fn print_header(text: &str, color_enabled: bool) {
         println!("  {}", colors::bold(text, true));
         println!("{}", colors::bold(&line, true));
     } else {
-        println!("\n{}", line);
-        println!("  {}", text);
-        println!("{}", line);
+        println!("\n{line}");
+        println!("  {text}");
+        println!("{line}");
     }
 }
 
@@ -238,22 +258,28 @@ pub fn print_section(text: &str, color_enabled: bool) {
         println!("\n{}", colors::bold(text, true));
         println!("{}", colors::dim("-".repeat(text.len()).as_str(), true));
     } else {
-        println!("\n{}", text);
+        println!("\n{text}");
         println!("{}", "-".repeat(text.len()));
     }
 }
 
 /// Status indicator
 pub enum Status {
+    /// Success status
     Success,
+    /// Error status
     Error,
+    /// Warning status
     Warning,
+    /// Info status
     Info,
+    /// Pending status
     Pending,
 }
 
 impl Status {
     /// Get the symbol for this status
+    #[must_use] 
     pub fn symbol(&self) -> &'static str {
         match self {
             Status::Success => "✓",
@@ -265,6 +291,7 @@ impl Status {
     }
 
     /// Get the color for this status
+    #[must_use] 
     pub fn color(&self) -> &'static str {
         match self {
             Status::Success => colors::GREEN,
@@ -276,12 +303,13 @@ impl Status {
     }
 
     /// Format a status line
+    #[must_use] 
     pub fn format(&self, message: &str, color_enabled: bool) -> String {
         let symbol = self.symbol();
         if color_enabled {
             format!("  {}{}{} {}", self.color(), symbol, colors::RESET, message)
         } else {
-            format!("  {} {}", symbol, message)
+            format!("  {symbol} {message}")
         }
     }
 }
@@ -316,7 +344,7 @@ mod tests {
         assert_eq!(format_bytes(512), "512 B");
         assert_eq!(format_bytes(1024), "1.00 KB");
         assert_eq!(format_bytes(1536), "1.50 KB");
-        assert_eq!(format_bytes(1048576), "1.00 MB");
+        assert_eq!(format_bytes(1_048_576), "1.00 MB");
     }
 
     #[test]

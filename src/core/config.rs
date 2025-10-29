@@ -1,4 +1,4 @@
-//! Configuration management for MultiGit
+//! Configuration management for `MultiGit`
 //!
 //! Implements hierarchical configuration loading from:
 //! 1. CLI flags (highest priority)
@@ -97,7 +97,7 @@ impl Config {
         tracing::debug!("Loading user config from: {}", config_path.display());
         let content = fs::read_to_string(&config_path)?;
         let config: Config = toml::from_str(&content)
-            .map_err(|e| MultiGitError::config(format!("Failed to parse user config: {}", e)))?;
+            .map_err(|e| MultiGitError::config(format!("Failed to parse user config: {e}")))?;
 
         Ok(Some(config))
     }
@@ -114,7 +114,7 @@ impl Config {
         tracing::debug!("Loading repo config from: {}", config_path.display());
         let content = fs::read_to_string(&config_path)?;
         let config: Config = toml::from_str(&content)
-            .map_err(|e| MultiGitError::config(format!("Failed to parse repo config: {}", e)))?;
+            .map_err(|e| MultiGitError::config(format!("Failed to parse repo config: {e}")))?;
 
         Ok(Some(config))
     }
@@ -132,11 +132,13 @@ impl Config {
     }
 
     /// Get the repo config directory path
+    #[must_use] 
     pub fn repo_config_dir() -> PathBuf {
         PathBuf::from(".multigit")
     }
 
     /// Get the repo config file path
+    #[must_use] 
     pub fn repo_config_path() -> PathBuf {
         Self::repo_config_dir().join("config.toml")
     }
@@ -149,7 +151,7 @@ impl Config {
         }
 
         let content = toml::to_string_pretty(self)
-            .map_err(|e| MultiGitError::config(format!("Failed to serialize config: {}", e)))?;
+            .map_err(|e| MultiGitError::config(format!("Failed to serialize config: {e}")))?;
 
         fs::write(path, content)?;
         tracing::info!("Saved configuration to: {}", path.display());
@@ -226,11 +228,13 @@ impl Config {
     }
 
     /// Get a remote configuration
+    #[must_use] 
     pub fn get_remote(&self, name: &str) -> Option<&RemoteConfig> {
         self.remotes.get(name)
     }
 
     /// Get all enabled remotes
+    #[must_use] 
     pub fn enabled_remotes(&self) -> HashMap<String, &RemoteConfig> {
         self.remotes
             .iter()
@@ -239,12 +243,13 @@ impl Config {
             .collect()
     }
 
-    /// Check if MultiGit is initialized in the current directory
+    /// Check if `MultiGit` is initialized in the current directory
+    #[must_use] 
     pub fn is_initialized() -> bool {
         Self::repo_config_dir().exists()
     }
 
-    /// Initialize MultiGit in the current directory
+    /// Initialize `MultiGit` in the current directory
     pub fn initialize() -> Result<()> {
         let config_dir = Self::repo_config_dir();
 

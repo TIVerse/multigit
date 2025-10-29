@@ -2,7 +2,6 @@
 
 use multigit::core::config::{Config, RemoteConfig};
 use multigit::models::Repository;
-use std::path::PathBuf;
 
 /// Create a default test config with multiple remotes
 pub fn create_test_config() -> Config {

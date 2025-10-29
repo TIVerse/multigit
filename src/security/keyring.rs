@@ -16,6 +16,7 @@ pub struct KeyringManager {
 
 impl KeyringManager {
     /// Create a new keyring manager
+    #[must_use] 
     pub fn new() -> Self {
         Self {
             service: SERVICE_NAME.to_string(),
@@ -23,6 +24,7 @@ impl KeyringManager {
     }
 
     /// Create a keyring manager with a custom service name
+    #[must_use] 
     pub fn with_service(service: String) -> Self {
         Self { service }
     }
@@ -32,11 +34,11 @@ impl KeyringManager {
         debug!("Storing credential for key: {}", key);
 
         let entry = Entry::new(&self.service, key)
-            .map_err(|e| MultiGitError::Other(format!("Failed to create keyring entry: {}", e)))?;
+            .map_err(|e| MultiGitError::Other(format!("Failed to create keyring entry: {e}")))?;
 
         entry
             .set_password(value)
-            .map_err(|e| MultiGitError::Other(format!("Failed to store credential: {}", e)))?;
+            .map_err(|e| MultiGitError::Other(format!("Failed to store credential: {e}")))?;
 
         info!("Successfully stored credential for key: {}", key);
         Ok(())
@@ -47,11 +49,11 @@ impl KeyringManager {
         debug!("Retrieving credential for key: {}", key);
 
         let entry = Entry::new(&self.service, key)
-            .map_err(|e| MultiGitError::Other(format!("Failed to create keyring entry: {}", e)))?;
+            .map_err(|e| MultiGitError::Other(format!("Failed to create keyring entry: {e}")))?;
 
         let password = entry
             .get_password()
-            .map_err(|e| MultiGitError::Other(format!("Failed to retrieve credential: {}", e)))?;
+            .map_err(|e| MultiGitError::Other(format!("Failed to retrieve credential: {e}")))?;
 
         debug!("Successfully retrieved credential for key: {}", key);
         Ok(password)
@@ -62,39 +64,37 @@ impl KeyringManager {
         debug!("Deleting credential for key: {}", key);
 
         let entry = Entry::new(&self.service, key)
-            .map_err(|e| MultiGitError::Other(format!("Failed to create keyring entry: {}", e)))?;
+            .map_err(|e| MultiGitError::Other(format!("Failed to create keyring entry: {e}")))?;
 
         entry
             .delete_password()
-            .map_err(|e| MultiGitError::Other(format!("Failed to delete credential: {}", e)))?;
+            .map_err(|e| MultiGitError::Other(format!("Failed to delete credential: {e}")))?;
 
         info!("Successfully deleted credential for key: {}", key);
         Ok(())
     }
 
     /// Check if a credential exists in the keyring
+    #[must_use] 
     pub fn exists(&self, key: &str) -> bool {
-        match self.retrieve(key) {
-            Ok(_) => true,
-            Err(_) => false,
-        }
+        self.retrieve(key).is_ok()
     }
 
     /// Store a provider token
     pub fn store_provider_token(&self, provider: &str, username: &str, token: &str) -> Result<()> {
-        let key = format!("{}:{}:token", provider, username);
+        let key = format!("{provider}:{username}:token");
         self.store(&key, token)
     }
 
     /// Retrieve a provider token
     pub fn retrieve_provider_token(&self, provider: &str, username: &str) -> Result<String> {
-        let key = format!("{}:{}:token", provider, username);
+        let key = format!("{provider}:{username}:token");
         self.retrieve(&key)
     }
 
     /// Delete a provider token
     pub fn delete_provider_token(&self, provider: &str, username: &str) -> Result<()> {
-        let key = format!("{}:{}:token", provider, username);
+        let key = format!("{provider}:{username}:token");
         self.delete(&key)
     }
 }

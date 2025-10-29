@@ -1,6 +1,6 @@
 //! Init command implementation
 //!
-//! Initialize a repository for MultiGit management.
+//! Initialize a repository for `MultiGit` management.
 
 use crate::core::config::Config;
 use crate::git::operations::GitOperations;
@@ -9,7 +9,7 @@ use std::fs;
 use std::path::Path;
 use tracing::info;
 
-/// Initialize MultiGit for a repository
+/// Initialize `MultiGit` for a repository
 pub fn execute(path: &str) -> Result<()> {
     info!("Initializing MultiGit at: {}", path);
 
@@ -18,8 +18,7 @@ pub fn execute(path: &str) -> Result<()> {
     // Check if it's a git repository
     let _git_ops = GitOperations::open(repo_path).map_err(|_| {
         MultiGitError::Other(format!(
-            "Not a git repository: {}\n\nRun 'git init' first.",
-            path
+            "Not a git repository: {path}\n\nRun 'git init' first."
         ))
     })?;
 
@@ -27,7 +26,7 @@ pub fn execute(path: &str) -> Result<()> {
     let multigit_dir = repo_path.join(".multigit");
     if !multigit_dir.exists() {
         fs::create_dir_all(&multigit_dir).map_err(|e| {
-            MultiGitError::Other(format!("Failed to create .multigit directory: {}", e))
+            MultiGitError::Other(format!("Failed to create .multigit directory: {e}"))
         })?;
         info!("Created .multigit directory");
     }
@@ -37,10 +36,10 @@ pub fn execute(path: &str) -> Result<()> {
     if !config_path.exists() {
         let default_config = Config::default();
         let config_str = toml::to_string_pretty(&default_config)
-            .map_err(|e| MultiGitError::Other(format!("Failed to serialize config: {}", e)))?;
+            .map_err(|e| MultiGitError::Other(format!("Failed to serialize config: {e}")))?;
 
         fs::write(&config_path, config_str)
-            .map_err(|e| MultiGitError::Other(format!("Failed to write config: {}", e)))?;
+            .map_err(|e| MultiGitError::Other(format!("Failed to write config: {e}")))?;
 
         info!("Created config file at: {}", config_path.display());
     }

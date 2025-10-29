@@ -18,7 +18,7 @@ pub fn execute(verbose: bool) -> Result<()> {
     let is_clean = manager.is_clean()?;
 
     println!("\nℹ MultiGit Status");
-    println!("\nCurrent branch: {}", branch);
+    println!("\nCurrent branch: {branch}");
     println!(
         "Working directory: {}",
         if is_clean { "clean" } else { "has changes" }

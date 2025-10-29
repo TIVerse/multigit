@@ -1,6 +1,6 @@
-//! MultiGit - Universal Git Multi-Remote Automation Tool
+//! `MultiGit` - Universal Git Multi-Remote Automation Tool
 //!
-//! MultiGit manages a single local Git repository synchronized across multiple
+//! `MultiGit` manages a single local Git repository synchronized across multiple
 //! remote Git hosting platforms (GitHub, GitLab, Bitbucket, Codeberg, Gitea, Forgejo).
 //!
 //! # Features
@@ -74,6 +74,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const NAME: &str = env!("CARGO_PKG_NAME");
 
 /// Get the full version string
+#[must_use] 
 pub fn version() -> String {
-    format!("{} v{}", NAME, VERSION)
+    format!("{NAME} v{VERSION}")
 }

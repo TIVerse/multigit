@@ -37,12 +37,12 @@ impl GitHubProvider {
         self.rate_limiter
             .acquire()
             .await
-            .map_err(|e| MultiGitError::Other(e))?;
+            .map_err(MultiGitError::Other)?;
 
         let url = if endpoint.starts_with("https://") {
             endpoint.to_string()
         } else {
-            format!("https://api.github.com{}", endpoint)
+            format!("https://api.github.com{endpoint}")
         };
 
         debug!("GitHub GET: {}", url);
@@ -60,8 +60,7 @@ impl GitHubProvider {
                 let status = response.status();
                 let error_text = response.text().await.unwrap_or_default();
                 return Err(MultiGitError::Other(format!(
-                    "GitHub API error: {} - {}",
-                    status, error_text
+                    "GitHub API error: {status} - {error_text}"
                 )));
             }
 
@@ -76,9 +75,9 @@ impl GitHubProvider {
         self.rate_limiter
             .acquire()
             .await
-            .map_err(|e| MultiGitError::Other(e))?;
+            .map_err(MultiGitError::Other)?;
 
-        let url = format!("https://api.github.com{}", endpoint);
+        let url = format!("https://api.github.com{endpoint}");
         debug!("GitHub POST: {}", url);
 
         retry_async(RetryConfig::for_api(), || async {
@@ -95,8 +94,7 @@ impl GitHubProvider {
                 let status = response.status();
                 let error_text = response.text().await.unwrap_or_default();
                 return Err(MultiGitError::Other(format!(
-                    "GitHub API error: {} - {}",
-                    status, error_text
+                    "GitHub API error: {status} - {error_text}"
                 )));
             }
 
@@ -111,9 +109,9 @@ impl GitHubProvider {
         self.rate_limiter
             .acquire()
             .await
-            .map_err(|e| MultiGitError::Other(e))?;
+            .map_err(MultiGitError::Other)?;
 
-        let url = format!("https://api.github.com{}", endpoint);
+        let url = format!("https://api.github.com{endpoint}");
         debug!("GitHub DELETE: {}", url);
 
         retry_async(RetryConfig::for_api(), || async {
@@ -129,8 +127,7 @@ impl GitHubProvider {
                 let status = response.status();
                 let error_text = response.text().await.unwrap_or_default();
                 return Err(MultiGitError::Other(format!(
-                    "GitHub API error: {} - {}",
-                    status, error_text
+                    "GitHub API error: {status} - {error_text}"
                 )));
             }
 
@@ -142,7 +139,7 @@ impl GitHubProvider {
 
 #[async_trait]
 impl Provider for GitHubProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "github"
     }
 
@@ -188,12 +185,12 @@ impl Provider for GitHubProvider {
             created_at: data["created_at"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
             updated_at: data["updated_at"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
         })
     }
@@ -219,12 +216,12 @@ impl Provider for GitHubProvider {
             created_at: data["created_at"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
             updated_at: data["updated_at"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
         })
     }

@@ -7,15 +7,13 @@ use crate::cli::interactive;
 use crate::core::auth::{AuthBackend, AuthManager};
 use crate::core::config::{Config, RemoteConfig};
 use crate::providers::bitbucket::BitbucketProvider;
-use crate::providers::codeberg::CodebergProvider;
 use crate::providers::gitea::GiteaProvider;
 use crate::providers::github::GitHubProvider;
 use crate::providers::gitlab::GitLabProvider;
 use crate::providers::traits::Provider;
 use crate::utils::error::{MultiGitError, Result};
-use std::collections::HashMap;
 use std::sync::Arc;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 /// Add a new remote provider
 pub async fn add_remote(
@@ -30,8 +28,7 @@ pub async fn add_remote(
     let provider_lower = provider_name.to_lowercase();
     if !is_supported_provider(&provider_lower) {
         return Err(MultiGitError::other(format!(
-            "Unsupported provider '{}'. Supported providers: github, gitlab, bitbucket, codeberg, gitea",
-            provider_name
+            "Unsupported provider '{provider_name}'. Supported providers: github, gitlab, bitbucket, codeberg, gitea"
         )));
     }
 
@@ -42,8 +39,7 @@ pub async fn add_remote(
     if config.remotes.contains_key(&provider_lower) {
         if interactive_mode {
             let overwrite = interactive::confirm(&format!(
-                "Remote '{}' already exists. Overwrite?",
-                provider_lower
+                "Remote '{provider_lower}' already exists. Overwrite?"
             ))?;
 
             if !overwrite {
@@ -52,8 +48,7 @@ pub async fn add_remote(
             }
         } else {
             return Err(MultiGitError::other(format!(
-                "Remote '{}' already exists. Use 'update' command to modify it.",
-                provider_lower
+                "Remote '{provider_lower}' already exists. Use 'update' command to modify it."
             )));
         }
     }
@@ -68,20 +63,19 @@ pub async fn add_remote(
             MultiGitError::auth(
                 provider_lower.clone(),
                 format!(
-                    "Token not provided. Set {} environment variable or use interactive mode",
-                    env_var
+                    "Token not provided. Set {env_var} environment variable or use interactive mode"
                 ),
             )
         })?
     };
 
     // Test connection before saving
-    interactive::print_info(&format!("Testing connection to {}...", provider_name));
+    interactive::print_info(&format!("Testing connection to {provider_name}..."));
     let provider = create_provider(&provider_lower, &username, &token, api_url.as_deref())?;
 
     match provider.test_connection().await {
         Ok(true) => {
-            interactive::print_success(&format!("Successfully connected to {}", provider_name));
+            interactive::print_success(&format!("Successfully connected to {provider_name}"));
         }
         Ok(false) => {
             return Err(MultiGitError::auth(
@@ -91,8 +85,7 @@ pub async fn add_remote(
         }
         Err(e) => {
             return Err(MultiGitError::network(format!(
-                "Failed to connect to {}: {}",
-                provider_name, e
+                "Failed to connect to {provider_name}: {e}"
             )));
         }
     }
@@ -117,15 +110,14 @@ pub async fn add_remote(
     config.save()?;
 
     interactive::print_success(&format!(
-        "Remote '{}' added successfully for user {}",
-        provider_lower, username
+        "Remote '{provider_lower}' added successfully for user {username}"
     ));
 
     Ok(())
 }
 
 /// List all configured remotes
-pub async fn list_remotes(detailed: bool) -> Result<()> {
+pub fn list_remotes(detailed: bool) -> Result<()> {
     let config = Config::load()?;
 
     if config.remotes.is_empty() {
@@ -140,17 +132,15 @@ pub async fn list_remotes(detailed: bool) -> Result<()> {
         let status = if remote_config.enabled { "✓" } else { "✗" };
         let provider_display = remote_config
             .provider
-            .as_ref()
-            .map(|p| p.to_string())
-            .unwrap_or_else(|| name.clone());
+            .as_ref().map_or_else(|| name.clone(), std::string::ToString::to_string);
 
-        println!("  {} {} ({})", status, name, provider_display);
+        println!("  {status} {name} ({provider_display})");
 
         if detailed {
             println!("      Username: {}", remote_config.username);
 
             if let Some(url) = &remote_config.api_url {
-                println!("      API URL: {}", url);
+                println!("      API URL: {url}");
             }
 
             println!("      Enabled: {}", remote_config.enabled);
@@ -170,21 +160,20 @@ pub async fn list_remotes(detailed: bool) -> Result<()> {
     Ok(())
 }
 
-/// Remove a remote
-pub async fn remove_remote(name: String, interactive_mode: bool) -> Result<()> {
+/// Remove a remote from configuration
+pub fn remove_remote(name: String, force: bool) -> Result<()> {
     let mut config = Config::load()?;
 
     let name_lower = name.to_lowercase();
 
     if !config.remotes.contains_key(&name_lower) {
-        return Err(MultiGitError::other(format!("Remote '{}' not found", name)));
+        return Err(MultiGitError::other(format!("Remote '{name}' not found")));
     }
 
-    // Confirm deletion in interactive mode
-    if interactive_mode {
+    // Confirm deletion if not forced
+    if !force {
         let confirm = interactive::confirm(&format!(
-            "Are you sure you want to remove remote '{}'? This will also delete stored credentials.",
-            name_lower
+            "Are you sure you want to remove remote '{name_lower}'? This will also delete stored credentials."
         ))?;
 
         if !confirm {
@@ -206,7 +195,7 @@ pub async fn remove_remote(name: String, interactive_mode: bool) -> Result<()> {
         interactive::print_warning("Could not remove stored credentials (they may not exist)");
     }
 
-    interactive::print_success(&format!("Remote '{}' removed successfully", name_lower));
+    interactive::print_success(&format!("Remote '{name_lower}' removed successfully"));
 
     Ok(())
 }
@@ -220,10 +209,10 @@ pub async fn test_remote(name: String) -> Result<()> {
     let remote_config = config
         .remotes
         .get(&name_lower)
-        .ok_or_else(|| MultiGitError::other(format!("Remote '{}' not found", name)))?;
+        .ok_or_else(|| MultiGitError::other(format!("Remote '{name}' not found")))?;
 
     if !remote_config.enabled {
-        interactive::print_warning(&format!("Remote '{}' is disabled", name_lower));
+        interactive::print_warning(&format!("Remote '{name_lower}' is disabled"));
     }
 
     // Get credentials
@@ -234,12 +223,12 @@ pub async fn test_remote(name: String) -> Result<()> {
         .map_err(|e| {
             MultiGitError::auth(
                 name_lower.clone(),
-                format!("Could not retrieve credentials: {}", e),
+                format!("Could not retrieve credentials: {e}"),
             )
         })?;
 
     // Create provider and test
-    interactive::print_info(&format!("Testing connection to {}...", name_lower));
+    interactive::print_info(&format!("Testing connection to {name_lower}..."));
 
     let provider = create_provider(
         &name_lower,
@@ -250,7 +239,7 @@ pub async fn test_remote(name: String) -> Result<()> {
 
     match provider.test_connection().await {
         Ok(true) => {
-            interactive::print_success(&format!("✓ {} connection successful", name_lower));
+            interactive::print_success(&format!("✓ {name_lower} connection successful"));
 
             // Try to get rate limit info
             if let Ok(rate_limit) = provider.get_rate_limit().await {
@@ -267,26 +256,25 @@ pub async fn test_remote(name: String) -> Result<()> {
             "Authentication failed. Credentials may be invalid or expired".to_string(),
         )),
         Err(e) => Err(MultiGitError::network(format!(
-            "Connection test failed: {}",
-            e
+            "Connection test failed: {e}"
         ))),
     }
 }
 
 /// Update remote credentials
 pub async fn update_remote(name: String, interactive_mode: bool) -> Result<()> {
-    let mut config = Config::load()?;
+    let config = Config::load()?;
 
     let name_lower = name.to_lowercase();
 
     let remote_config = config
         .remotes
         .get(&name_lower)
-        .ok_or_else(|| MultiGitError::other(format!("Remote '{}' not found", name)))?;
+        .ok_or_else(|| MultiGitError::other(format!("Remote '{name}' not found")))?;
 
     // Get new token
     let token = if interactive_mode {
-        println!("\nUpdating credentials for '{}'\n", name_lower);
+        println!("\nUpdating credentials for '{name_lower}'\n");
         interactive::prompt_token(&name_lower)?
     } else {
         let env_var = format!("MULTIGIT_{}_TOKEN", name_lower.to_uppercase());
@@ -294,8 +282,7 @@ pub async fn update_remote(name: String, interactive_mode: bool) -> Result<()> {
             MultiGitError::auth(
                 name_lower.clone(),
                 format!(
-                    "Token not provided. Set {} environment variable or use interactive mode",
-                    env_var
+                    "Token not provided. Set {env_var} environment variable or use interactive mode"
                 ),
             )
         })?
@@ -323,8 +310,7 @@ pub async fn update_remote(name: String, interactive_mode: bool) -> Result<()> {
         }
         Err(e) => {
             return Err(MultiGitError::network(format!(
-                "Failed to test new credentials: {}",
-                e
+                "Failed to test new credentials: {e}"
             )));
         }
     }
@@ -335,8 +321,7 @@ pub async fn update_remote(name: String, interactive_mode: bool) -> Result<()> {
     auth_manager.store_credential(&name_lower, &remote_config.username, &token)?;
 
     interactive::print_success(&format!(
-        "Credentials for '{}' updated successfully",
-        name_lower
+        "Credentials for '{name_lower}' updated successfully"
     ));
 
     Ok(())
@@ -356,11 +341,11 @@ pub async fn test_all_remotes() -> Result<()> {
     let mut success_count = 0;
     let mut fail_count = 0;
 
-    for (name, _) in &config.remotes {
+    for name in config.remotes.keys() {
         match test_remote(name.clone()).await {
-            Ok(_) => success_count += 1,
+            Ok(()) => success_count += 1,
             Err(e) => {
-                interactive::print_error(&format!("✗ {}: {}", name, e));
+                interactive::print_error(&format!("✗ {name}: {e}"));
                 fail_count += 1;
             }
         }
@@ -368,8 +353,8 @@ pub async fn test_all_remotes() -> Result<()> {
     }
 
     println!("\nTest Results:");
-    println!("  ✓ Success: {}", success_count);
-    println!("  ✗ Failed: {}", fail_count);
+    println!("  ✓ Success: {success_count}");
+    println!("  ✗ Failed: {fail_count}");
 
     if fail_count > 0 {
         println!(
@@ -393,7 +378,7 @@ fn create_provider(
             Arc::new(p)
         }
         "gitlab" => {
-            let url = api_url.map(|s| s.to_string());
+            let url = api_url.map(std::string::ToString::to_string);
             let p = GitLabProvider::new(token.to_string(), username.to_string(), url)?;
             Arc::new(p)
         }
@@ -418,8 +403,7 @@ fn create_provider(
         }
         _ => {
             return Err(MultiGitError::other(format!(
-                "Unsupported provider: {}",
-                provider
+                "Unsupported provider: {provider}"
             )));
         }
     };

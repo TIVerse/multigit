@@ -12,18 +12,26 @@ use tracing::{debug, error, info, warn};
 /// Result of a push operation to a single remote
 #[derive(Debug, Clone)]
 pub struct PushResult {
+    /// Name of the remote
     pub remote: String,
+    /// Whether the push was successful
     pub success: bool,
+    /// Message describing the result
     pub message: String,
+    /// Duration of the operation in milliseconds
     pub duration_ms: u64,
 }
 
 /// Result of a fetch operation from a single remote
 #[derive(Debug, Clone)]
 pub struct FetchResult {
+    /// Name of the remote
     pub remote: String,
+    /// Whether the fetch was successful
     pub success: bool,
+    /// Message describing the result
     pub message: String,
+    /// Number of commits fetched
     pub commits_fetched: usize,
 }
 
@@ -45,6 +53,7 @@ impl SyncManager {
     }
 
     /// Set maximum parallel operations
+    #[must_use] 
     pub fn with_max_parallel(mut self, max: usize) -> Self {
         self.max_parallel = max.max(1);
         self
@@ -54,7 +63,7 @@ impl SyncManager {
     pub async fn push_all(&self, branch: &str, remotes: &[String]) -> Result<Vec<PushResult>> {
         info!("Pushing branch '{}' to {} remotes", branch, remotes.len());
 
-        let refspec = format!("refs/heads/{}:refs/heads/{}", branch, branch);
+        let refspec = format!("refs/heads/{branch}:refs/heads/{branch}");
         let mut tasks: Vec<JoinHandle<PushResult>> = Vec::new();
 
         // Create tasks for each remote
@@ -73,7 +82,7 @@ impl SyncManager {
                         return PushResult {
                             remote,
                             success: false,
-                            message: format!("Failed to open repo: {}", e),
+                            message: format!("Failed to open repo: {e}"),
                             duration_ms: start.elapsed().as_millis() as u64,
                         };
                     }
@@ -81,7 +90,7 @@ impl SyncManager {
 
                 // Perform the push
                 match ops.push(&remote, &[&refspec]) {
-                    Ok(_) => {
+                    Ok(()) => {
                         info!("Successfully pushed to {}", remote);
                         PushResult {
                             remote,
@@ -95,7 +104,7 @@ impl SyncManager {
                         PushResult {
                             remote,
                             success: false,
-                            message: format!("Push failed: {}", e),
+                            message: format!("Push failed: {e}"),
                             duration_ms: start.elapsed().as_millis() as u64,
                         }
                     }
@@ -151,7 +160,7 @@ impl SyncManager {
                         return FetchResult {
                             remote,
                             success: false,
-                            message: format!("Failed to open repo: {}", e),
+                            message: format!("Failed to open repo: {e}"),
                             commits_fetched: 0,
                         };
                     }
@@ -159,7 +168,7 @@ impl SyncManager {
 
                 // Fetch all refs from the remote
                 match ops.fetch(&remote, &[]) {
-                    Ok(_) => {
+                    Ok(()) => {
                         info!("Successfully fetched from {}", remote);
                         FetchResult {
                             remote,
@@ -173,7 +182,7 @@ impl SyncManager {
                         FetchResult {
                             remote,
                             success: false,
-                            message: format!("Fetch failed: {}", e),
+                            message: format!("Fetch failed: {e}"),
                             commits_fetched: 0,
                         }
                     }
@@ -253,9 +262,13 @@ impl SyncManager {
 /// Sync status for a single remote
 #[derive(Debug, Clone)]
 pub struct SyncStatus {
+    /// Name of the remote
     pub remote: String,
+    /// Number of commits ahead
     pub ahead: usize,
+    /// Number of commits behind
     pub behind: usize,
+    /// Whether the local and remote are in sync
     pub in_sync: bool,
 }
 

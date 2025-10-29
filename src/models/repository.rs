@@ -120,6 +120,7 @@ impl RepoConfig {
     }
 
     /// Make the repository private
+    #[must_use] 
     pub fn private(mut self) -> Self {
         self.private = true;
         self
@@ -138,6 +139,7 @@ impl RepoConfig {
     }
 
     /// Enable auto-initialization with README
+    #[must_use] 
     pub fn auto_init(mut self) -> Self {
         self.auto_init = true;
         self
@@ -168,6 +170,7 @@ pub struct LocalRepo {
 
 impl LocalRepo {
     /// Create a new local repository reference
+    #[must_use] 
     pub fn new(path: PathBuf) -> Self {
         Self {
             path,
@@ -180,11 +183,13 @@ impl LocalRepo {
     }
 
     /// Check if the repository has uncommitted changes
+    #[must_use] 
     pub fn has_changes(&self) -> bool {
         !self.is_clean
     }
 
     /// Check if the repository is in sync (no ahead/behind commits)
+    #[must_use] 
     pub fn is_synced(&self) -> bool {
         self.ahead == 0 && self.behind == 0
     }

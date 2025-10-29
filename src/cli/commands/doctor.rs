@@ -29,7 +29,7 @@ pub fn execute(fix: bool) -> Result<()> {
     }
 
     if let Some(ref branch) = report.current_branch {
-        println!("✓ Current branch: {}", branch);
+        println!("✓ Current branch: {branch}");
     } else {
         println!("⚠ Current branch: DETACHED HEAD");
     }
@@ -49,7 +49,7 @@ pub fn execute(fix: bool) -> Result<()> {
     if !report.issues.is_empty() {
         println!("\n⚠ Issues found:");
         for issue in &report.issues {
-            println!("  • {}", issue);
+            println!("  • {issue}");
         }
     }
 
@@ -57,7 +57,7 @@ pub fn execute(fix: bool) -> Result<()> {
     if !report.recommendations.is_empty() {
         println!("\n💡 Recommendations:");
         for rec in &report.recommendations {
-            println!("  • {}", rec);
+            println!("  • {rec}");
         }
     }
 

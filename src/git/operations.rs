@@ -18,7 +18,7 @@ impl GitOperations {
         let path = path.as_ref();
         debug!("Opening repository at: {}", path.display());
 
-        let repo = Repository::open(path).map_err(|e| MultiGitError::GitError(e))?;
+        let repo = Repository::open(path).map_err(MultiGitError::GitError)?;
 
         info!("Successfully opened repository at {}", path.display());
         Ok(Self { repo })
@@ -29,7 +29,7 @@ impl GitOperations {
         let path = path.as_ref();
         debug!("Initializing repository at: {}", path.display());
 
-        let repo = Repository::init(path).map_err(|e| MultiGitError::GitError(e))?;
+        let repo = Repository::init(path).map_err(MultiGitError::GitError)?;
 
         info!("Successfully initialized repository at {}", path.display());
         Ok(Self { repo })
@@ -54,7 +54,7 @@ impl GitOperations {
         Ok(branch_name)
     }
 
-    /// Alias for current_branch - Get the current branch name
+    /// Alias for `current_branch` - Get the current branch name
     pub fn get_current_branch(&self) -> Result<String> {
         self.current_branch()
     }
@@ -76,6 +76,7 @@ impl GitOperations {
     }
 
     /// Get the repository path
+    #[must_use] 
     pub fn path(&self) -> &Path {
         self.repo.path()
     }
@@ -159,8 +160,8 @@ impl GitOperations {
         local_branch: &str,
         remote_name: &str,
     ) -> Result<(usize, usize)> {
-        let local_ref = format!("refs/heads/{}", local_branch);
-        let remote_ref = format!("refs/remotes/{}/{}", remote_name, local_branch);
+        let local_ref = format!("refs/heads/{local_branch}");
+        let remote_ref = format!("refs/remotes/{remote_name}/{local_branch}");
 
         let local_oid = self
             .repo
@@ -184,8 +185,8 @@ impl GitOperations {
         Ok((ahead, behind))
     }
 
-    /// Get the HEAD commit
-    pub fn head_commit(&self) -> Result<Commit> {
+    /// Get the commit at HEAD
+    pub fn head_commit(&self) -> Result<Commit<'_>> {
         let head = self.repo.head().map_err(MultiGitError::GitError)?;
         let oid = head
             .target()
@@ -195,7 +196,7 @@ impl GitOperations {
     }
 
     /// Get a commit by OID
-    pub fn find_commit(&self, oid: Oid) -> Result<Commit> {
+    pub fn find_commit(&self, oid: Oid) -> Result<Commit<'_>> {
         self.repo.find_commit(oid).map_err(MultiGitError::GitError)
     }
 
@@ -219,11 +220,13 @@ impl GitOperations {
     }
 
     /// Check if repository is bare
+    #[must_use] 
     pub fn is_bare(&self) -> bool {
         self.repo.is_bare()
     }
 
-    /// Get the underlying git2::Repository reference
+    /// Get the underlying `git2::Repository` reference
+    #[must_use] 
     pub fn inner(&self) -> &Repository {
         &self.repo
     }
@@ -237,7 +240,7 @@ impl GitOperations {
 
         let url = remote
             .url()
-            .ok_or_else(|| MultiGitError::Other(format!("Remote '{}' has no URL", remote_name)))?
+            .ok_or_else(|| MultiGitError::Other(format!("Remote '{remote_name}' has no URL")))?
             .to_string();
 
         debug!("Remote {} URL: {}", remote_name, url);
@@ -253,7 +256,7 @@ impl GitOperations {
         self.get_ahead_behind(branch, remote_name)
     }
 
-    /// Create a new GitOperations from a path (alias for open)
+    /// Create a new `GitOperations` from a path (alias for open)
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         Self::open(path)
     }

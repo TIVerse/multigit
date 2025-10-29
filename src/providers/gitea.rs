@@ -42,7 +42,7 @@ impl GiteaProvider {
         self.rate_limiter
             .acquire()
             .await
-            .map_err(|e| MultiGitError::Other(e))?;
+            .map_err(MultiGitError::Other)?;
 
         let url = format!("{}{}", self.api_url, endpoint);
         debug!("Gitea GET: {}", url);
@@ -59,8 +59,7 @@ impl GiteaProvider {
                 let status = response.status();
                 let error_text = response.text().await.unwrap_or_default();
                 return Err(MultiGitError::Other(format!(
-                    "Gitea API error: {} - {}",
-                    status, error_text
+                    "Gitea API error: {status} - {error_text}"
                 )));
             }
 
@@ -74,7 +73,7 @@ impl GiteaProvider {
         self.rate_limiter
             .acquire()
             .await
-            .map_err(|e| MultiGitError::Other(e))?;
+            .map_err(MultiGitError::Other)?;
 
         let url = format!("{}{}", self.api_url, endpoint);
         debug!("Gitea POST: {}", url);
@@ -92,8 +91,7 @@ impl GiteaProvider {
                 let status = response.status();
                 let error_text = response.text().await.unwrap_or_default();
                 return Err(MultiGitError::Other(format!(
-                    "Gitea API error: {} - {}",
-                    status, error_text
+                    "Gitea API error: {status} - {error_text}"
                 )));
             }
 
@@ -106,7 +104,7 @@ impl GiteaProvider {
 
 #[async_trait]
 impl Provider for GiteaProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "gitea"
     }
 
@@ -145,12 +143,12 @@ impl Provider for GiteaProvider {
             created_at: data["created_at"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
             updated_at: data["updated_at"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
         })
     }
@@ -174,12 +172,12 @@ impl Provider for GiteaProvider {
             created_at: data["created_at"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
             updated_at: data["updated_at"].as_str().and_then(|s| {
                 chrono::DateTime::parse_from_rfc3339(s)
                     .ok()
-                    .map(|dt| dt.into())
+                    .map(std::convert::Into::into)
             }),
         })
     }

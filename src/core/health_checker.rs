@@ -10,20 +10,30 @@ use tracing::{debug, info};
 /// Health check result
 #[derive(Debug, Clone)]
 pub struct HealthReport {
+    /// Whether the repository is valid
     pub repo_valid: bool,
+    /// Whether the working directory is clean
     pub working_dir_clean: bool,
+    /// Current branch name
     pub current_branch: Option<String>,
+    /// Health status of remotes
     pub remotes: Vec<RemoteHealth>,
+    /// List of issues found
     pub issues: Vec<String>,
+    /// Recommendations for fixes
     pub recommendations: Vec<String>,
 }
 
 /// Health status of a remote
 #[derive(Debug, Clone)]
 pub struct RemoteHealth {
+    /// Name of the remote
     pub name: String,
+    /// URL of the remote
     pub url: String,
+    /// Whether the remote is reachable
     pub reachable: bool,
+    /// Issue description if any
     pub issue: Option<String>,
 }
 
@@ -64,7 +74,7 @@ impl HealthChecker {
         let remotes = self.check_remotes();
         let unreachable_count = remotes.iter().filter(|r| !r.reachable).count();
         if unreachable_count > 0 {
-            issues.push(format!("{} remote(s) unreachable", unreachable_count));
+            issues.push(format!("{unreachable_count} remote(s) unreachable"));
             recommendations.push("Check your network connection and remote URLs".to_string());
         }
 
@@ -116,6 +126,7 @@ impl HealthChecker {
     }
 
     /// Quick check - returns true if everything is OK
+    #[must_use] 
     pub fn is_healthy(&self) -> bool {
         let report = self.check();
         report.issues.is_empty()
@@ -172,8 +183,7 @@ mod tests {
         let checker = HealthChecker::new(&repo_path).unwrap();
 
         // A fresh repo with a commit should be healthy
-        let is_healthy = checker.is_healthy();
-        // May have issues if no remotes configured, so we just check it runs
-        assert!(is_healthy == true || is_healthy == false);
+        let _is_healthy = checker.is_healthy();
+        // May have issues if no remotes configured, so we just check it runs without panic
     }
 }

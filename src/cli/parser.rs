@@ -4,7 +4,7 @@
 
 use clap::{Parser, Subcommand};
 
-/// MultiGit - Universal Git multi-remote automation tool
+/// `MultiGit` - Universal Git multi-remote automation tool
 #[derive(Parser, Debug)]
 #[command(name = "multigit")]
 #[command(version, about, long_about = None)]
@@ -21,13 +21,15 @@ pub struct Cli {
     #[arg(long, default_value = "text")]
     pub format: String,
 
+    /// Subcommand to execute
     #[command(subcommand)]
     pub command: Commands,
 }
 
+/// Available commands
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Initialize MultiGit for a repository
+    /// Initialize `MultiGit` for a repository
     Init {
         /// Repository path (defaults to current directory)
         #[arg(default_value = ".")]
@@ -36,6 +38,7 @@ pub enum Commands {
 
     /// Manage remotes
     Remote {
+        /// Remote action to perform
         #[command(subcommand)]
         action: RemoteAction,
     },
@@ -86,12 +89,14 @@ pub enum Commands {
 
     /// Manage conflicts
     Conflict {
+        /// Conflict action to perform
         #[command(subcommand)]
         action: ConflictAction,
     },
 
     /// Manage background daemon
     Daemon {
+        /// Daemon action to perform
         #[command(subcommand)]
         action: DaemonAction,
     },
@@ -104,6 +109,7 @@ pub enum Commands {
     },
 }
 
+/// Remote management actions
 #[derive(Subcommand, Debug)]
 pub enum RemoteAction {
     /// Add a new remote
@@ -162,6 +168,7 @@ pub enum RemoteAction {
     },
 }
 
+/// Conflict resolution actions
 #[derive(Subcommand, Debug)]
 pub enum ConflictAction {
     /// List detected conflicts
@@ -175,6 +182,7 @@ pub enum ConflictAction {
     },
 }
 
+/// Daemon control actions
 #[derive(Subcommand, Debug)]
 pub enum DaemonAction {
     /// Start the daemon
@@ -200,6 +208,7 @@ pub enum DaemonAction {
 
 impl Cli {
     /// Parse command-line arguments
+    #[must_use] 
     pub fn parse_args() -> Self {
         Self::parse()
     }

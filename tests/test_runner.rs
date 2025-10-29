@@ -16,11 +16,6 @@ mod runner_tests {
     #[test]
     fn test_runner_works() {
         // Simple test to verify test infrastructure works
-        assert!(true);
-    }
-
-    #[test]
-    fn test_basic_math() {
         assert_eq!(2 + 2, 4);
     }
 }

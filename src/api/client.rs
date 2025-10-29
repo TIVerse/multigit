@@ -24,7 +24,7 @@ pub fn build_api_client() -> Result<Client> {
         .connect_timeout(Duration::from_secs(10))
         .pool_max_idle_per_host(10)
         .build()
-        .map_err(|e| crate::utils::error::MultiGitError::NetworkError(e))?;
+        .map_err(crate::utils::error::MultiGitError::NetworkError)?;
 
     Ok(client)
 }
@@ -43,6 +43,7 @@ impl ApiClient {
     }
 
     /// Get the underlying reqwest client
+    #[must_use] 
     pub fn client(&self) -> &Client {
         &self.client
     }

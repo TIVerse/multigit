@@ -1,8 +1,8 @@
-//! Configuration models for MultiGit settings
+//! Configuration models for `MultiGit` settings
 
 use serde::{Deserialize, Serialize};
 
-/// Settings for general MultiGit behavior
+/// Settings for general `MultiGit` behavior
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
     /// Default branch to use for new operations

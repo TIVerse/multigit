@@ -60,24 +60,28 @@ impl Remote {
     }
 
     /// Enable SSH protocol
+    #[must_use] 
     pub fn with_ssh(mut self) -> Self {
         self.use_ssh = true;
         self
     }
 
     /// Set priority for conflict resolution
+    #[must_use] 
     pub fn with_priority(mut self, priority: i32) -> Self {
         self.priority = priority;
         self
     }
 
     /// Disable this remote
+    #[must_use] 
     pub fn disabled(mut self) -> Self {
         self.enabled = false;
         self
     }
 
     /// Get the Git remote name (e.g., "multigit-github")
+    #[must_use] 
     pub fn git_remote_name(&self) -> String {
         format!("multigit-{}", self.name)
     }
@@ -87,16 +91,23 @@ impl Remote {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum ProviderType {
+    /// GitHub hosting platform
     GitHub,
+    /// GitLab hosting platform
     GitLab,
+    /// Bitbucket hosting platform
     Bitbucket,
+    /// Codeberg hosting platform
     Codeberg,
+    /// Gitea (self-hosted)
     Gitea,
+    /// Forgejo (self-hosted)
     Forgejo,
 }
 
 impl ProviderType {
     /// Get the default API URL for this provider
+    #[must_use] 
     pub fn default_api_url(&self) -> &'static str {
         match self {
             Self::GitHub => "https://api.github.com",
@@ -109,6 +120,7 @@ impl ProviderType {
     }
 
     /// Get the display name for this provider
+    #[must_use] 
     pub fn display_name(&self) -> &'static str {
         match self {
             Self::GitHub => "GitHub",
@@ -121,38 +133,41 @@ impl ProviderType {
     }
 
     /// Check if this is a self-hosted provider type
+    #[must_use] 
     pub fn is_self_hosted(&self) -> bool {
         matches!(self, Self::Gitea | Self::Forgejo)
     }
 
     /// Get the HTTPS clone URL template
+    #[must_use] 
     pub fn https_url_template(&self, username: &str, repo: &str, api_url: Option<&str>) -> String {
         match self {
-            Self::GitHub => format!("https://github.com/{}/{}.git", username, repo),
-            Self::GitLab => format!("https://gitlab.com/{}/{}.git", username, repo),
-            Self::Bitbucket => format!("https://bitbucket.org/{}/{}.git", username, repo),
-            Self::Codeberg => format!("https://codeberg.org/{}/{}.git", username, repo),
+            Self::GitHub => format!("https://github.com/{username}/{repo}.git"),
+            Self::GitLab => format!("https://gitlab.com/{username}/{repo}.git"),
+            Self::Bitbucket => format!("https://bitbucket.org/{username}/{repo}.git"),
+            Self::Codeberg => format!("https://codeberg.org/{username}/{repo}.git"),
             Self::Gitea | Self::Forgejo => {
                 let base_url = api_url.unwrap_or("https://localhost");
-                format!("{}/{}/{}.git", base_url, username, repo)
+                format!("{base_url}/{username}/{repo}.git")
             }
         }
     }
 
     /// Get the SSH clone URL template
+    #[must_use] 
     pub fn ssh_url_template(&self, username: &str, repo: &str, api_url: Option<&str>) -> String {
         match self {
-            Self::GitHub => format!("git@github.com:{}/{}.git", username, repo),
-            Self::GitLab => format!("git@gitlab.com:{}/{}.git", username, repo),
-            Self::Bitbucket => format!("git@bitbucket.org:{}/{}.git", username, repo),
-            Self::Codeberg => format!("git@codeberg.org:{}/{}.git", username, repo),
+            Self::GitHub => format!("git@github.com:{username}/{repo}.git"),
+            Self::GitLab => format!("git@gitlab.com:{username}/{repo}.git"),
+            Self::Bitbucket => format!("git@bitbucket.org:{username}/{repo}.git"),
+            Self::Codeberg => format!("git@codeberg.org:{username}/{repo}.git"),
             Self::Gitea | Self::Forgejo => {
                 // Extract host from API URL
                 let host = api_url
                     .and_then(|u| url::Url::parse(u).ok())
                     .and_then(|u| u.host_str().map(String::from))
                     .unwrap_or_else(|| "localhost".to_string());
-                format!("git@{}:{}/{}.git", host, username, repo)
+                format!("git@{host}:{username}/{repo}.git")
             }
         }
     }
@@ -175,7 +190,7 @@ impl std::str::FromStr for ProviderType {
             "codeberg" => Ok(Self::Codeberg),
             "gitea" => Ok(Self::Gitea),
             "forgejo" => Ok(Self::Forgejo),
-            _ => Err(format!("Unknown provider: {}", s)),
+            _ => Err(format!("Unknown provider: {s}")),
         }
     }
 }
@@ -184,7 +199,9 @@ impl std::str::FromStr for ProviderType {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Protocol {
+    /// HTTPS protocol
     Https,
+    /// SSH protocol
     Ssh,
 }
 
@@ -212,16 +229,19 @@ pub struct RateLimit {
 
 impl RateLimit {
     /// Check if we're close to hitting the rate limit (< 10% remaining)
+    #[must_use] 
     pub fn is_low(&self) -> bool {
         self.remaining < (self.limit / 10)
     }
 
     /// Check if the rate limit has been exceeded
+    #[must_use] 
     pub fn is_exceeded(&self) -> bool {
         self.remaining == 0
     }
 
     /// Get the duration until the rate limit resets
+    #[must_use] 
     pub fn time_until_reset(&self) -> chrono::Duration {
         self.reset_at - chrono::Utc::now()
     }

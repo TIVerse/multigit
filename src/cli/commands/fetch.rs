@@ -50,8 +50,7 @@ pub async fn execute(remotes: Vec<String>, all: bool) -> Result<()> {
     }
 
     println!(
-        "\n📊 Summary: {} succeeded, {} failed",
-        success_count, failed_count
+        "\n📊 Summary: {success_count} succeeded, {failed_count} failed"
     );
 
     if success_count > 0 {

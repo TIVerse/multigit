@@ -6,8 +6,8 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::time::{interval, sleep};
-use tracing::{debug, error, info, warn};
+use tokio::time::interval;
+use tracing::{debug, error, info};
 
 /// Task scheduler for periodic operations
 pub struct Scheduler {
@@ -17,6 +17,7 @@ pub struct Scheduler {
 
 impl Scheduler {
     /// Create a new scheduler with the given interval
+    #[must_use] 
     pub fn new(interval_seconds: u64) -> Self {
         Self {
             interval_seconds,
@@ -53,7 +54,7 @@ impl Scheduler {
             debug!("Scheduler tick - executing task");
 
             match task().await {
-                Ok(_) => {
+                Ok(()) => {
                     info!("Scheduled task completed successfully");
                 }
                 Err(e) => {
@@ -74,16 +75,19 @@ impl Scheduler {
     }
 
     /// Check if the scheduler is running
+    #[must_use] 
     pub fn is_running(&self) -> bool {
         self.running.load(Ordering::SeqCst)
     }
 
     /// Get the interval in seconds
+    #[must_use] 
     pub fn interval_seconds(&self) -> u64 {
         self.interval_seconds
     }
 
     /// Get a handle to stop the scheduler
+    #[must_use] 
     pub fn stop_handle(&self) -> SchedulerHandle {
         SchedulerHandle {
             running: self.running.clone(),
@@ -105,6 +109,7 @@ impl SchedulerHandle {
     }
 
     /// Check if scheduler is running
+    #[must_use] 
     pub fn is_running(&self) -> bool {
         self.running.load(Ordering::SeqCst)
     }
@@ -125,7 +130,7 @@ impl Schedule {
             let num = s
                 .trim_end_matches('s')
                 .parse::<u64>()
-                .map_err(|e| format!("Invalid seconds: {}", e))?;
+                .map_err(|e| format!("Invalid seconds: {e}"))?;
             Ok(Self {
                 interval_seconds: num,
             })
@@ -133,7 +138,7 @@ impl Schedule {
             let num = s
                 .trim_end_matches('m')
                 .parse::<u64>()
-                .map_err(|e| format!("Invalid minutes: {}", e))?;
+                .map_err(|e| format!("Invalid minutes: {e}"))?;
             Ok(Self {
                 interval_seconds: num * 60,
             })
@@ -141,7 +146,7 @@ impl Schedule {
             let num = s
                 .trim_end_matches('h')
                 .parse::<u64>()
-                .map_err(|e| format!("Invalid hours: {}", e))?;
+                .map_err(|e| format!("Invalid hours: {e}"))?;
             Ok(Self {
                 interval_seconds: num * 3600,
             })
@@ -149,7 +154,7 @@ impl Schedule {
             // Default to seconds if no suffix
             let num = s
                 .parse::<u64>()
-                .map_err(|e| format!("Invalid number: {}", e))?;
+                .map_err(|e| format!("Invalid number: {e}"))?;
             Ok(Self {
                 interval_seconds: num,
             })
@@ -157,11 +162,13 @@ impl Schedule {
     }
 
     /// Get the interval in seconds
+    #[must_use] 
     pub fn interval_seconds(&self) -> u64 {
         self.interval_seconds
     }
 
     /// Create a schedule for every N seconds
+    #[must_use] 
     pub fn every_seconds(seconds: u64) -> Self {
         Self {
             interval_seconds: seconds,
@@ -169,6 +176,7 @@ impl Schedule {
     }
 
     /// Create a schedule for every N minutes
+    #[must_use] 
     pub fn every_minutes(minutes: u64) -> Self {
         Self {
             interval_seconds: minutes * 60,
@@ -176,6 +184,7 @@ impl Schedule {
     }
 
     /// Create a schedule for every N hours
+    #[must_use] 
     pub fn every_hours(hours: u64) -> Self {
         Self {
             interval_seconds: hours * 3600,

@@ -21,13 +21,19 @@ pub enum ResolutionStrategy {
 /// A detected conflict between remotes
 #[derive(Debug, Clone)]
 pub struct Conflict {
+    /// Branch name
     pub branch: String,
+    /// Number of local commits ahead
     pub local_commits: usize,
+    /// Number of remote commits ahead
     pub remote_commits: usize,
+    /// Whether branches have diverged
     pub diverged: bool,
 }
 
 impl Conflict {
+    /// Create a new conflict
+    #[must_use] 
     pub fn new(branch: String, ahead: usize, behind: usize) -> Self {
         Self {
             branch,
@@ -45,15 +51,17 @@ pub struct ConflictResolver {
 
 impl ConflictResolver {
     /// Create a new conflict resolver with the given strategy
+    #[must_use] 
     pub fn new(strategy: ResolutionStrategy) -> Self {
         Self { strategy }
     }
 
     /// Detect conflicts between local and remote branches
+    #[must_use] 
     pub fn detect_conflict(&self, ahead: usize, behind: usize) -> Option<Conflict> {
         if ahead > 0 && behind > 0 {
             Some(Conflict {
-                branch: "".to_string(), // Will be filled by caller
+                branch: String::new(), // Will be filled by caller
                 local_commits: ahead,
                 remote_commits: behind,
                 diverged: true,
@@ -96,6 +104,7 @@ impl ConflictResolver {
     }
 
     /// Check if a conflict can be auto-resolved
+    #[must_use] 
     pub fn can_auto_resolve(&self, conflict: &Conflict) -> bool {
         match self.strategy {
             ResolutionStrategy::FastForwardOnly => !conflict.diverged,
