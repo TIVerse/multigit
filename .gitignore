@@ -1,0 +1,29 @@
+# Rust build artifacts
+/target
+Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MultiGit local data
+.multigit/state.db
+.multigit/audit.log
+
+# Testing
+.tmp-*
+test-repos/
+
+# Security - never commit these
+*.key
+*.pem
+credentials.toml
+.kiro
+.windsurf
