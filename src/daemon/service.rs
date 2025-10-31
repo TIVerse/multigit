@@ -244,15 +244,13 @@ pub struct DaemonStatus {
     pub log_file: Option<PathBuf>,
 }
 
-/// Perform a sync operation - logs sync information
+/// Perform a sync operation using the CLI command
 ///
-/// Note: Full sync implementation in daemon mode requires Send trait bounds
-/// on libgit2 Repository type, which is not available in v1.0.
-/// For now, this logs what would be synced. Use `multigit sync` manually
-/// or configure a cron job to run the CLI command for actual syncing.
-#[allow(clippy::unused_async)]
+/// Note: We use `tokio::process::Command` to invoke the CLI binary directly
+/// since `libgit2` Repository doesn't implement Send, which is required for
+/// async daemon operations. This approach allows full sync functionality.
 async fn perform_sync() -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    debug!("Performing background sync check...");
+    debug!("Performing background sync...");
 
     // Load config
     let config =
@@ -266,12 +264,38 @@ async fn perform_sync() -> std::result::Result<(), Box<dyn std::error::Error + S
     }
 
     info!(
-        "[Daemon] Would sync with {} enabled remotes: {:?}",
+        "[Daemon] Starting sync with {} enabled remotes: {:?}",
         enabled.len(),
         enabled
     );
-    info!("[Daemon] To enable full sync in daemon mode, run: multigit sync");
-    info!("[Daemon] Or set up a cron job: */5 * * * * cd /path/to/repo && multigit sync");
+
+    // Get the current executable path to invoke multigit CLI
+    let current_exe = std::env::current_exe()
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+
+    // Run multigit sync command
+    let output = tokio::process::Command::new(&current_exe)
+        .args(["sync", "--no-interaction"])
+        .current_dir(".")
+        .output()
+        .await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+
+    if output.status.success() {
+        info!("[Daemon] Sync completed successfully");
+        // Log stdout if available
+        if !output.stdout.is_empty() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            debug!("[Daemon] Sync output: {}", stdout);
+        }
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        warn!("[Daemon] Sync failed: {}", stderr);
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Sync command failed: {stderr}"),
+        )) as Box<dyn std::error::Error + Send + Sync>);
+    }
 
     Ok(())
 }

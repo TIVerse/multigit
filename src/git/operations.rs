@@ -5,11 +5,16 @@
 use crate::utils::error::{MultiGitError, Result};
 use git2::{BranchType, Commit, Oid, Repository, StatusOptions};
 use std::path::Path;
-use tracing::{debug, info};
+use std::time::Duration;
+use tracing::{debug, info, warn};
+
+/// Default timeout for network operations (5 minutes)
+const DEFAULT_NETWORK_TIMEOUT_SECS: u64 = 300;
 
 /// Wrapper for Git operations using libgit2
 pub struct GitOperations {
     repo: Repository,
+    network_timeout: Duration,
 }
 
 impl GitOperations {
@@ -21,7 +26,10 @@ impl GitOperations {
         let repo = Repository::open(path).map_err(MultiGitError::GitError)?;
 
         info!("Successfully opened repository at {}", path.display());
-        Ok(Self { repo })
+        Ok(Self {
+            repo,
+            network_timeout: Duration::from_secs(DEFAULT_NETWORK_TIMEOUT_SECS),
+        })
     }
 
     /// Initialize a new repository at the given path
@@ -32,7 +40,17 @@ impl GitOperations {
         let repo = Repository::init(path).map_err(MultiGitError::GitError)?;
 
         info!("Successfully initialized repository at {}", path.display());
-        Ok(Self { repo })
+        Ok(Self {
+            repo,
+            network_timeout: Duration::from_secs(DEFAULT_NETWORK_TIMEOUT_SECS),
+        })
+    }
+
+    /// Set the network timeout for fetch/push/clone operations
+    #[must_use]
+    pub fn with_timeout(mut self, timeout: Duration) -> Self {
+        self.network_timeout = timeout;
+        self
     }
 
     /// Get the current branch name
@@ -90,18 +108,28 @@ impl GitOperations {
 
     /// Fetch from a remote
     pub fn fetch(&self, remote_name: &str, refspecs: &[&str]) -> Result<()> {
-        info!("Fetching from remote: {}", remote_name);
+        info!("Fetching from remote: {} (timeout: {}s)", remote_name, self.network_timeout.as_secs());
 
         let mut remote = self
             .repo
             .find_remote(remote_name)
             .map_err(MultiGitError::GitError)?;
 
-        // Set up fetch options with callbacks
+        // Set up fetch options with callbacks and timeout
         let mut fetch_options = git2::FetchOptions::new();
         let mut callbacks = git2::RemoteCallbacks::new();
 
-        callbacks.transfer_progress(|stats| {
+        // Track start time for timeout checking
+        let start_time = std::time::Instant::now();
+        let timeout = self.network_timeout;
+
+        callbacks.transfer_progress(move |stats| {
+            // Check for timeout
+            if start_time.elapsed() > timeout {
+                warn!("Fetch operation timed out after {}s", timeout.as_secs());
+                return false; // Abort the transfer
+            }
+
             if stats.received_objects() == stats.total_objects() {
                 debug!(
                     "Resolving deltas {}/{}",
@@ -122,7 +150,13 @@ impl GitOperations {
 
         remote
             .fetch(refspecs, Some(&mut fetch_options), None)
-            .map_err(MultiGitError::GitError)?;
+            .map_err(|e| {
+                if start_time.elapsed() > timeout {
+                    MultiGitError::Other(format!("Fetch timed out after {}s", timeout.as_secs()))
+                } else {
+                    MultiGitError::GitError(e)
+                }
+            })?;
 
         info!("Successfully fetched from {}", remote_name);
         Ok(())
@@ -130,7 +164,7 @@ impl GitOperations {
 
     /// Push to a remote
     pub fn push(&self, remote_name: &str, refspecs: &[&str]) -> Result<()> {
-        info!("Pushing to remote: {}", remote_name);
+        info!("Pushing to remote: {} (timeout: {}s)", remote_name, self.network_timeout.as_secs());
 
         let mut remote = self
             .repo
@@ -140,7 +174,17 @@ impl GitOperations {
         let mut push_options = git2::PushOptions::new();
         let mut callbacks = git2::RemoteCallbacks::new();
 
-        callbacks.push_transfer_progress(|current, total, bytes| {
+        // Track start time for timeout checking
+        let start_time = std::time::Instant::now();
+        let timeout = self.network_timeout;
+
+        callbacks.push_transfer_progress(move |current, total, bytes| {
+            // Check for timeout
+            if start_time.elapsed() > timeout {
+                warn!("Push operation timed out after {}s", timeout.as_secs());
+                return;
+            }
+
             debug!("Push progress: {}/{} ({} bytes)", current, total, bytes);
         });
 
@@ -148,7 +192,13 @@ impl GitOperations {
 
         remote
             .push(refspecs, Some(&mut push_options))
-            .map_err(MultiGitError::GitError)?;
+            .map_err(|e| {
+                if start_time.elapsed() > timeout {
+                    MultiGitError::Other(format!("Push timed out after {}s", timeout.as_secs()))
+                } else {
+                    MultiGitError::GitError(e)
+                }
+            })?;
 
         info!("Successfully pushed to {}", remote_name);
         Ok(())
@@ -269,7 +319,10 @@ impl GitOperations {
         let repo = Repository::clone(url, path).map_err(MultiGitError::GitError)?;
 
         info!("Successfully cloned repository to {}", path.display());
-        Ok(Self { repo })
+        Ok(Self {
+            repo,
+            network_timeout: Duration::from_secs(DEFAULT_NETWORK_TIMEOUT_SECS),
+        })
     }
 
     /// Add a remote to the repository

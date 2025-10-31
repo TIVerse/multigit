@@ -25,7 +25,7 @@ impl MultiRemoteProgress {
             pb.set_style(
                 ProgressStyle::default_bar()
                     .template("{prefix:>12} [{bar:40.cyan/blue}] {pos}/{len} {msg}")
-                    .unwrap()
+                    .expect("Progress bar template should be valid")
                     .progress_chars("█▓▒░ "),
             );
             pb.set_prefix(remote_name.clone());
@@ -79,7 +79,7 @@ impl Spinner {
         pb.set_style(
             ProgressStyle::default_spinner()
                 .template("{spinner:.green} {msg}")
-                .unwrap()
+                .expect("Spinner template should be valid")
                 .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]),
         );
         pb.set_message(message.to_string());
@@ -117,7 +117,7 @@ impl ProgressCounter {
         pb.set_style(
             ProgressStyle::default_bar()
                 .template("{msg} [{bar:40.cyan/blue}] {pos}/{len} ({percent}%) {per_sec}")
-                .unwrap()
+                .expect("Progress counter template should be valid")
                 .progress_chars("█▓▒░ "),
         );
         pb.set_message(message.to_string());
@@ -160,7 +160,7 @@ pub fn create_transfer_progress(remote: &str, total_bytes: u64) -> ProgressBar {
             .template(
                 "{prefix:>12} [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}) {msg}",
             )
-            .unwrap()
+            .expect("Transfer progress template should be valid")
             .progress_chars("█▓▒░ "),
     );
     pb.set_prefix(remote.to_string());

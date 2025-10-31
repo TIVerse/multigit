@@ -243,8 +243,15 @@ fn is_valid_repo_name(name: &str) -> bool {
         return false;
     }
 
-    let first_char = name.chars().next().unwrap();
-    let last_char = name.chars().last().unwrap();
+    // Safe: we've already checked that name is not empty
+    let first_char = match name.chars().next() {
+        Some(c) => c,
+        None => return false,
+    };
+    let last_char = match name.chars().last() {
+        Some(c) => c,
+        None => return false,
+    };
 
     if !first_char.is_alphanumeric() || !last_char.is_alphanumeric() {
         return false;

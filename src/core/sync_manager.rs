@@ -65,14 +65,18 @@ impl SyncManager {
 
         let refspec = format!("refs/heads/{branch}:refs/heads/{branch}");
         let mut tasks: Vec<JoinHandle<PushResult>> = Vec::new();
+        let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(self.max_parallel));
 
         // Create tasks for each remote
         for remote_name in remotes {
             let remote = remote_name.clone();
             let refspec = refspec.clone();
             let repo_path = self.git_ops.workdir()?.to_path_buf();
+            let permit = semaphore.clone();
 
             let task = tokio::spawn(async move {
+                // Acquire semaphore permit to limit concurrency
+                let _permit = permit.acquire().await.expect("Semaphore should not be closed");
                 let start = std::time::Instant::now();
 
                 // Open a new GitOperations instance for this task
@@ -112,17 +116,9 @@ impl SyncManager {
             });
 
             tasks.push(task);
-
-            // Limit concurrent tasks
-            if tasks.len() >= self.max_parallel {
-                // Wait for at least one task to complete
-                if let Some(task) = tasks.first_mut() {
-                    let _ = task.await;
-                }
-            }
         }
 
-        // Wait for all remaining tasks to complete
+        // Wait for all tasks to complete
         let mut results = Vec::new();
         for task in tasks {
             match task.await {
@@ -148,12 +144,17 @@ impl SyncManager {
         info!("Fetching from {} remotes", remotes.len());
 
         let mut tasks: Vec<JoinHandle<FetchResult>> = Vec::new();
+        let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(self.max_parallel));
 
         for remote_name in remotes {
             let remote = remote_name.clone();
             let repo_path = self.git_ops.workdir()?.to_path_buf();
+            let permit = semaphore.clone();
 
             let task = tokio::spawn(async move {
+                // Acquire semaphore permit to limit concurrency
+                let _permit = permit.acquire().await.expect("Semaphore should not be closed");
+
                 let ops = match GitOperations::open(&repo_path) {
                     Ok(ops) => ops,
                     Err(e) => {
@@ -166,15 +167,37 @@ impl SyncManager {
                     }
                 };
 
+                // Get current HEAD commit to compare later
+                let old_head_oid = ops.inner().refname_to_id("HEAD").ok();
+
                 // Fetch all refs from the remote
                 match ops.fetch(&remote, &[]) {
                     Ok(()) => {
                         info!("Successfully fetched from {}", remote);
+                        
+                        // Try to count new commits (best effort)
+                        let commits_fetched = if let Some(old_oid) = old_head_oid {
+                            if let Ok(new_oid) = ops.inner().refname_to_id("HEAD") {
+                                if old_oid == new_oid {
+                                    0
+                                } else {
+                                    // Count commits between old and new HEAD
+                                    ops.inner().graph_ahead_behind(new_oid, old_oid)
+                                        .map(|(ahead, _)| ahead)
+                                        .unwrap_or(0)
+                                }
+                            } else {
+                                0
+                            }
+                        } else {
+                            0
+                        };
+
                         FetchResult {
                             remote,
                             success: true,
                             message: "Fetch successful".to_string(),
-                            commits_fetched: 0, // TODO: Count actual commits
+                            commits_fetched,
                         }
                     }
                     Err(e) => {

@@ -184,7 +184,8 @@ pub fn remove_remote(name: String, force: bool) -> Result<()> {
     }
 
     // Remove from config
-    let remote_config = config.remotes.remove(&name_lower).unwrap();
+    let remote_config = config.remotes.remove(&name_lower)
+        .expect("Remote should exist - we checked with contains_key");
     config.save()?;
 
     // Remove credentials
