@@ -1,0 +1,26 @@
+[settings]
+default_branch = "main"
+parallel_push = true
+max_parallel = 4
+colored_output = true
+verbosity = 1
+
+[sync]
+auto_sync = false
+strategy = "fast-forward"
+include_branches = []
+exclude_branches = []
+detect_conflicts = true
+auto_resolve = false
+
+[security]
+auth_backend = "keyring"
+audit_log = false
+ssh_agent = true
+
+[daemon]
+enabled = false
+interval_seconds = 0
+background = false
+
+[remotes]
