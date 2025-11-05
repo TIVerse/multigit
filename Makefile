@@ -6,11 +6,35 @@
 
 # Variables
 BINARY_NAME := multigit
+BINARY_ALIAS := mg
 CARGO := cargo
-INSTALL_PATH := /usr/local/bin
 TARGET_DIR := target
 BUILD_TYPE := release
 RUST_LOG ?= info
+
+# Detect OS
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+    OS := linux
+    INSTALL_PATH := /usr/local/bin
+    EXT :=
+endif
+ifeq ($(UNAME_S),Darwin)
+    OS := macos
+    INSTALL_PATH := /usr/local/bin
+    EXT :=
+endif
+ifeq ($(OS),Windows_NT)
+    OS := windows
+    INSTALL_PATH := $(USERPROFILE)\.cargo\bin
+    EXT := .exe
+else
+    ifeq ($(findstring MINGW,$(UNAME_S)),MINGW)
+        OS := windows
+        INSTALL_PATH := $(HOME)/.cargo/bin
+        EXT := .exe
+    endif
+endif
 
 # Default target
 .DEFAULT_GOAL := help
@@ -30,15 +54,29 @@ build: ## Build debug binary
 
 release: ## Build optimized release binary
 	@echo "🚀 Building optimized release binary..."
-	@$(CARGO) build --release --verbose
-	@echo "✅ Binary built at: $(TARGET_DIR)/release/$(BINARY_NAME)"
+	@$(CARGO) build --release --verbose --bin $(BINARY_NAME)
+	@$(CARGO) build --release --verbose --bin $(BINARY_ALIAS)
+	@echo "✅ Binaries built:"
+	@echo "   $(TARGET_DIR)/release/$(BINARY_NAME)$(EXT)"
+	@echo "   $(TARGET_DIR)/release/$(BINARY_ALIAS)$(EXT)"
 
 build-all-targets: ## Build for all platforms
 	@echo "🌍 Building for all platforms..."
+	@echo "Building Linux x86_64 (GNU)..."
 	@$(CARGO) build --release --target x86_64-unknown-linux-gnu
+	@echo "Building Linux x86_64 (MUSL - static)..."
 	@$(CARGO) build --release --target x86_64-unknown-linux-musl
+	@echo "Building macOS x86_64..."
 	@$(CARGO) build --release --target x86_64-apple-darwin
+	@echo "Building macOS ARM64 (Apple Silicon)..."
+	@$(CARGO) build --release --target aarch64-apple-darwin
+	@echo "Building Windows x86_64..."
 	@$(CARGO) build --release --target x86_64-pc-windows-msvc
+	@echo "✅ All platform builds completed!"
+
+dist: ## Create distribution packages for all platforms
+	@echo "📦 Creating distribution packages..."
+	@bash scripts/build-release.sh
 
 check: ## Check code without building
 	@echo "🔍 Checking code..."
@@ -151,28 +189,76 @@ coverage-open: ## Generate and open coverage report
 
 ##@ Installation
 
-install: release ## Install binary to system
-	@echo "📦 Installing $(BINARY_NAME)..."
-	@install -Dm755 $(TARGET_DIR)/release/$(BINARY_NAME) $(INSTALL_PATH)/$(BINARY_NAME)
-	@echo "✅ Installed $(BINARY_NAME) to $(INSTALL_PATH)/$(BINARY_NAME)"
-	@echo "💡 Run '$(BINARY_NAME) --version' to verify installation"
+install: release ## Install binaries to system (Linux/macOS: /usr/local/bin, Windows: cargo bin)
+	@echo "📦 Installing $(BINARY_NAME) and $(BINARY_ALIAS) for $(OS)..."
+ifeq ($(OS),windows)
+	@echo "Installing to $(INSTALL_PATH)..."
+	@copy /Y $(TARGET_DIR)\release\$(BINARY_NAME).exe $(INSTALL_PATH)\$(BINARY_NAME).exe
+	@copy /Y $(TARGET_DIR)\release\$(BINARY_ALIAS).exe $(INSTALL_PATH)\$(BINARY_ALIAS).exe
+	@echo "✅ Installed both binaries to $(INSTALL_PATH)"
+else
+	@echo "Installing to $(INSTALL_PATH)..."
+	@sudo install -Dm755 $(TARGET_DIR)/release/$(BINARY_NAME) $(INSTALL_PATH)/$(BINARY_NAME)
+	@sudo install -Dm755 $(TARGET_DIR)/release/$(BINARY_ALIAS) $(INSTALL_PATH)/$(BINARY_ALIAS)
+	@echo "✅ Installed both binaries to $(INSTALL_PATH)"
+endif
+	@echo "💡 Run '$(BINARY_NAME) --version' or '$(BINARY_ALIAS) --version' to verify"
 
-install-user: release ## Install binary to user's local bin
-	@echo "📦 Installing $(BINARY_NAME) to ~/.local/bin..."
+install-user: release ## Install binaries to user directory (no sudo required)
+	@echo "📦 Installing $(BINARY_NAME) and $(BINARY_ALIAS) to user directory..."
+ifeq ($(OS),windows)
+	@echo "Installing to $(INSTALL_PATH)..."
+	@copy /Y $(TARGET_DIR)\release\$(BINARY_NAME).exe $(INSTALL_PATH)\$(BINARY_NAME).exe
+	@copy /Y $(TARGET_DIR)\release\$(BINARY_ALIAS).exe $(INSTALL_PATH)\$(BINARY_ALIAS).exe
+else
 	@mkdir -p ~/.local/bin
 	@install -m755 $(TARGET_DIR)/release/$(BINARY_NAME) ~/.local/bin/$(BINARY_NAME)
-	@echo "✅ Installed $(BINARY_NAME) to ~/.local/bin/$(BINARY_NAME)"
-	@echo "💡 Make sure ~/.local/bin is in your PATH"
+	@install -m755 $(TARGET_DIR)/release/$(BINARY_ALIAS) ~/.local/bin/$(BINARY_ALIAS)
+	@echo "✅ Installed both binaries to ~/.local/bin"
+endif
+	@echo "💡 Make sure your user bin directory is in PATH"
 
-uninstall: ## Uninstall binary from system
-	@echo "🗑️  Uninstalling $(BINARY_NAME)..."
-	@rm -f $(INSTALL_PATH)/$(BINARY_NAME)
-	@echo "✅ Uninstalled $(BINARY_NAME)"
+install-macos: release ## Install binaries on macOS with proper permissions
+	@echo "🍎 Installing for macOS..."
+	@sudo install -m755 $(TARGET_DIR)/release/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
+	@sudo install -m755 $(TARGET_DIR)/release/$(BINARY_ALIAS) /usr/local/bin/$(BINARY_ALIAS)
+	@echo "✅ Installed to /usr/local/bin"
+	@which $(BINARY_NAME)
+	@which $(BINARY_ALIAS)
 
-uninstall-user: ## Uninstall binary from user's local bin
-	@echo "🗑️  Uninstalling $(BINARY_NAME) from ~/.local/bin..."
+install-linux: release ## Install binaries on Linux with proper permissions
+	@echo "🐧 Installing for Linux..."
+	@sudo install -Dm755 $(TARGET_DIR)/release/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
+	@sudo install -Dm755 $(TARGET_DIR)/release/$(BINARY_ALIAS) /usr/local/bin/$(BINARY_ALIAS)
+	@echo "✅ Installed to /usr/local/bin"
+	@which $(BINARY_NAME)
+	@which $(BINARY_ALIAS)
+
+install-windows: release ## Install binaries on Windows
+	@echo "🪟 Installing for Windows..."
+	@bash scripts/install-windows.sh
+
+uninstall: ## Uninstall binaries from system
+	@echo "🗑️  Uninstalling $(BINARY_NAME) and $(BINARY_ALIAS)..."
+ifeq ($(OS),windows)
+	@del /F $(INSTALL_PATH)\$(BINARY_NAME).exe
+	@del /F $(INSTALL_PATH)\$(BINARY_ALIAS).exe
+else
+	@sudo rm -f $(INSTALL_PATH)/$(BINARY_NAME)
+	@sudo rm -f $(INSTALL_PATH)/$(BINARY_ALIAS)
+endif
+	@echo "✅ Uninstalled both binaries"
+
+uninstall-user: ## Uninstall binaries from user directory
+	@echo "🗑️  Uninstalling from user directory..."
+ifeq ($(OS),windows)
+	@del /F $(INSTALL_PATH)\$(BINARY_NAME).exe
+	@del /F $(INSTALL_PATH)\$(BINARY_ALIAS).exe
+else
 	@rm -f ~/.local/bin/$(BINARY_NAME)
-	@echo "✅ Uninstalled $(BINARY_NAME)"
+	@rm -f ~/.local/bin/$(BINARY_ALIAS)
+endif
+	@echo "✅ Uninstalled both binaries"
 
 ##@ Development
 
