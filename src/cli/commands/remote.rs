@@ -7,13 +7,9 @@ use crate::cli::interactive;
 use crate::core::auth::{AuthBackend, AuthManager};
 use crate::core::config::{Config, RemoteConfig};
 use crate::git::operations::GitOperations;
-use crate::providers::bitbucket::BitbucketProvider;
-use crate::providers::gitea::GiteaProvider;
-use crate::providers::github::GitHubProvider;
-use crate::providers::gitlab::GitLabProvider;
-use crate::providers::traits::{Protocol, Provider};
+use crate::providers::factory::{create_provider, is_supported_provider};
+use crate::providers::traits::Protocol;
 use crate::utils::error::{MultiGitError, Result};
-use std::sync::Arc;
 use tracing::{info, warn};
 
 /// Add a new remote provider
@@ -425,59 +421,7 @@ pub async fn test_all_remotes() -> Result<()> {
     Ok(())
 }
 
-/// Create a provider instance
-fn create_provider(
-    provider: &str,
-    username: &str,
-    token: &str,
-    api_url: Option<&str>,
-) -> Result<Arc<dyn Provider>> {
-    let provider_instance: Arc<dyn Provider> = match provider {
-        "github" => {
-            let p = GitHubProvider::new(token.to_string(), username.to_string())?;
-            Arc::new(p)
-        }
-        "gitlab" => {
-            let url = api_url.map(std::string::ToString::to_string);
-            let p = GitLabProvider::new(token.to_string(), username.to_string(), url)?;
-            Arc::new(p)
-        }
-        "bitbucket" => {
-            let p = BitbucketProvider::new(username.to_string(), token.to_string())?;
-            Arc::new(p)
-        }
-        "gitea" => {
-            let url = api_url.ok_or_else(|| {
-                MultiGitError::config("Gitea requires an API URL. Use --url flag".to_string())
-            })?;
-            let p = GiteaProvider::new(token.to_string(), username.to_string(), url.to_string())?;
-            Arc::new(p)
-        }
-        "codeberg" => {
-            let p = GiteaProvider::new(
-                token.to_string(),
-                username.to_string(),
-                "https://codeberg.org".to_string(),
-            )?;
-            Arc::new(p)
-        }
-        _ => {
-            return Err(MultiGitError::other(format!(
-                "Unsupported provider: {provider}"
-            )));
-        }
-    };
-
-    Ok(provider_instance)
-}
-
-/// Check if a provider is supported
-fn is_supported_provider(provider: &str) -> bool {
-    matches!(
-        provider,
-        "github" | "gitlab" | "bitbucket" | "codeberg" | "gitea"
-    )
-}
+// Provider creation now delegated to shared factory module
 
 #[cfg(test)]
 mod tests {

@@ -6,10 +6,7 @@ use crate::cli::interactive;
 use crate::core::auth::{AuthBackend, AuthManager};
 use crate::core::config::{Config, RemoteConfig};
 use crate::git::operations::GitOperations;
-use crate::providers::bitbucket::BitbucketProvider;
-use crate::providers::gitea::GiteaProvider;
-use crate::providers::github::GitHubProvider;
-use crate::providers::gitlab::GitLabProvider;
+use crate::providers::factory::create_provider;
 use crate::providers::traits::{Protocol, Provider};
 use crate::utils::error::{MultiGitError, Result};
 use dialoguer::{theme::ColorfulTheme, Confirm, MultiSelect, Select};
@@ -293,53 +290,14 @@ fn show_token_instructions(provider: &str) {
     println!("   It will NEVER be stored in plain text.\n");
 }
 
-/// Create a test provider instance
+/// Create a test provider instance (delegates to shared factory)
 fn create_test_provider(
     provider: &str,
     username: &str,
     token: &str,
     api_url: Option<&str>,
 ) -> Result<Arc<dyn Provider>> {
-    let provider_instance: Arc<dyn Provider> = match provider {
-        "github" => Arc::new(GitHubProvider::new(
-            token.to_string(),
-            username.to_string(),
-        )?),
-        "gitlab" => {
-            let url = api_url.map(std::string::ToString::to_string);
-            Arc::new(GitLabProvider::new(
-                token.to_string(),
-                username.to_string(),
-                url,
-            )?)
-        }
-        "bitbucket" => Arc::new(BitbucketProvider::new(
-            username.to_string(),
-            token.to_string(),
-        )?),
-        "gitea" => {
-            let url = api_url
-                .ok_or_else(|| MultiGitError::config("Gitea requires an API URL".to_string()))?;
-            Arc::new(GiteaProvider::new(
-                token.to_string(),
-                username.to_string(),
-                url.to_string(),
-            )?)
-        }
-        "codeberg" => Arc::new(GiteaProvider::new(
-            token.to_string(),
-            username.to_string(),
-            "https://codeberg.org".to_string(),
-        )?),
-        _ => {
-            return Err(MultiGitError::other(format!(
-                "Provider {} not supported",
-                provider
-            )))
-        }
-    };
-
-    Ok(provider_instance)
+    create_provider(provider, username, token, api_url)
 }
 
 /// Configure advanced preferences
