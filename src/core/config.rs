@@ -67,7 +67,14 @@ fn default_true() -> bool {
 }
 
 impl Config {
-    /// Load configuration from all sources
+    /// Load configuration from all sources with hierarchical priority
+    ///
+    /// Configuration is loaded and merged in the following order (later overrides earlier):
+    /// 1. Default values (hardcoded)
+    /// 2. User config (`~/.config/multigit/config.toml`)
+    /// 3. Repository config (`.multigit/config.toml`) - highest priority
+    ///
+    /// This allows global defaults with per-repository overrides.
     pub fn load() -> Result<Self> {
         // Start with defaults
         let mut config = Self::default();
@@ -165,13 +172,33 @@ impl Config {
         self.save_to_file(&path)
     }
 
-    /// Save to repository config file
+    /// Save to repository config file (`.multigit/config.toml`)
+    ///
+    /// Use this when you want repository-specific configuration that won't
+    /// affect other projects. Repository config has highest priority during load.
+    ///
+    /// **When to use**:
+    /// - Project-specific remote configurations
+    /// - Repository-specific sync settings
+    /// - Overriding global user preferences for this repo
     pub fn save_repo_config(&self) -> Result<()> {
         let path = Self::repo_config_path();
         self.save_to_file(&path)
     }
 
-    /// Save configuration (defaults to user config)
+    /// Save configuration to user config file
+    ///
+    /// **Note**: By default, remotes and settings are saved to the user config
+    /// (`~/.config/multigit/config.toml`), making them available globally across
+    /// all repositories. To save repository-specific configuration, use
+    /// `save_repo_config()` instead.
+    ///
+    /// This behavior allows:
+    /// - Sharing credentials and remotes across multiple projects
+    /// - Avoiding duplicate configuration per repository
+    /// - Easy global remote management
+    ///
+    /// Use `save_repo_config()` when you need repository-specific settings.
     pub fn save(&self) -> Result<()> {
         self.save_user_config()
     }
