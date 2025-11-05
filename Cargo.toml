@@ -13,6 +13,15 @@ keywords = ["git", "cli", "sync", "multi-remote"]
 categories = ["command-line-utilities", "development-tools"]
 rust-version = "1.70"
 
+# Binary definitions - both 'multigit' and 'mg' use the same code
+[[bin]]
+name = "multigit"
+path = "src/main.rs"
+
+[[bin]]
+name = "mg"
+path = "src/main.rs"
+
 [dependencies]
 # Async runtime
 tokio = { version = "1.35", features = ["full"] }

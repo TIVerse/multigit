@@ -5,8 +5,10 @@ use clap::{Parser, Subcommand};
 use multigit::utils::logger::{init_logger, LogLevel, LoggerConfig};
 
 #[derive(Parser)]
-#[command(name = "multigit")]
-#[command(version, about = "Universal Git multi-remote automation tool", long_about = None)]
+#[command(name = env!("CARGO_BIN_NAME"))]
+#[command(version)]
+#[command(about = "Universal Git multi-remote automation tool")]
+#[command(long_about = "MultiGit (mg) - Synchronize repositories across multiple Git hosting providers.\n\nAvailable as both 'multigit' and 'mg' commands for your convenience.")]
 struct Cli {
     /// Increase verbosity (-v, -vv, -vvv)
     #[arg(short, long, action = clap::ArgAction::Count)]
