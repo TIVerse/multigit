@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2025-11-06
 
 ### Added
+- **Conventional Commit Helper** (`mg cc` / `multigit cc`) - Interactive tool for creating conventional commits
+  - Select files to stage with "All files" or "Select individually" options
+  - Choose commit type (feat, fix, docs, style, refactor, perf, test, build, ci, chore)
+  - Smart scope detection from changed file paths
+  - Support for breaking changes and issue references
+  - Preview before committing with option to edit
+  - Automatically excludes .gitignore files
+  - Also available as `mg commit` or `multigit commit`
 - **Short Command Alias** (`mg`) - Added `mg` as a shorter alternative to `multigit`
   - Both `mg` and `multigit` binaries are built from the same source
   - Use `mg init`, `mg sync`, etc. for faster typing
