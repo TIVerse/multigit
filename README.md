@@ -33,6 +33,9 @@ mg init                    # or 'multigit init'
 mg remote add github <username>
 mg remote add gitlab <username>
 
+# Make some changes, then use the interactive commit helper
+mg cc                      # Interactive conventional commit wizard
+
 # Sync to all remotes
 mg sync
 
@@ -117,6 +120,21 @@ multigit sync --force
 
 ```bash
 multigit status
+```
+
+### Conventional Commits
+
+```bash
+# Interactive conventional commit helper
+mg cc                    # or 'multigit cc' or 'mg commit'
+
+# Features:
+# - Select files to stage
+# - Choose commit type (feat, fix, docs, etc.)
+# - Smart scope detection from changed files
+# - Breaking change detection
+# - Issue reference linking
+# - Preview before committing
 ```
 
 ### Manage Conflicts

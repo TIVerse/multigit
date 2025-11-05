@@ -151,6 +151,10 @@ enum Commands {
         fix: bool,
     },
 
+    /// Interactive conventional commit helper
+    #[command(name = "cc", alias = "commit")]
+    Cc,
+
     /// Show version information
     Version,
 }
@@ -407,6 +411,11 @@ fn main() -> Result<()> {
         Commands::Doctor { fix } => {
             use multigit::cli::commands::doctor;
             doctor::execute(fix)?;
+        }
+
+        Commands::Cc => {
+            use multigit::cli::commands::conventional_commit;
+            conventional_commit::execute()?;
         }
 
         Commands::Conflict { action } => {

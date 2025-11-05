@@ -3,6 +3,7 @@
 pub mod branch;
 pub mod clone;
 pub mod conflict;
+pub mod conventional_commit;
 pub mod create;
 pub mod daemon;
 pub mod doctor;

@@ -226,6 +226,13 @@ impl From<keyring::Error> for MultiGitError {
     }
 }
 
+// Convert dialoguer errors to our error type
+impl From<dialoguer::Error> for MultiGitError {
+    fn from(err: dialoguer::Error) -> Self {
+        Self::Other(format!("Interactive prompt error: {err}"))
+    }
+}
+
 /// Result type alias for `MultiGit` operations
 pub type Result<T> = std::result::Result<T, MultiGitError>;
 

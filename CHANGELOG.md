@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2025-11-06
 
 ### Added
+- **Short Command Alias** (`mg`) - Added `mg` as a shorter alternative to `multigit`
+  - Both `mg` and `multigit` binaries are built from the same source
+  - Use `mg init`, `mg sync`, etc. for faster typing
+  - Fully identical functionality to `multigit`
+  - Binary name auto-detection in help text
 - **Unified Provider Factory** (`src/providers/factory.rs`) - Centralized provider creation logic
   - Eliminates code duplication between `setup.rs` and `remote.rs`
   - Single source of truth for supported providers
