@@ -4,7 +4,6 @@ version = "2.0.0"
 edition = "2021"
 authors = ["TIVerse Team <team@tiverse.dev>"]
 description = "Production-ready multi-remote Git synchronization tool - push, pull, and sync across GitHub, GitLab, Bitbucket, Codeberg, and Gitea"
-documentation = "https://docs.rs/multigit"
 homepage = "https://github.com/TIVerse/multigit"
 repository = "https://github.com/TIVerse/multigit"
 readme = "README.md"

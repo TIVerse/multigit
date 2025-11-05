@@ -1665,26 +1665,31 @@ jobs:
 
 ### Installation Methods
 
-#### 1. Cargo Install
-```bash
-cargo install multigit
-```
+#### 1. From GitHub Releases (Recommended)
+Download pre-built binaries from [GitHub Releases](https://github.com/TIVerse/multigit/releases).
 
-#### 2. Binary Download
 ```bash
 # Linux/macOS
-curl -L https://github.com/multigit/multigit/releases/latest/download/multigit-$(uname -s)-$(uname -m) -o multigit
+curl -L https://github.com/TIVerse/multigit/releases/latest/download/multigit-$(uname -s)-$(uname -m) -o multigit
 chmod +x multigit
 sudo mv multigit /usr/local/bin/
 
 # Windows (PowerShell)
-Invoke-WebRequest -Uri "https://github.com/multigit/multigit/releases/latest/download/multigit-Windows-x86_64.exe" -OutFile "multigit.exe"
+Invoke-WebRequest -Uri "https://github.com/TIVerse/multigit/releases/latest/download/multigit-Windows-x86_64.exe" -OutFile "multigit.exe"
 ```
 
-#### 3. Package Managers
+#### 2. Build from Source
+```bash
+git clone https://github.com/TIVerse/multigit.git
+cd multigit
+cargo build --release
+# Binaries will be in target/release/multigit and target/release/mg
+```
+
+#### 3. Package Managers (Future)
 
 ```bash
-# Homebrew (macOS/Linux)
+# Homebrew (planned)
 brew install multigit
 
 # Scoop (Windows)

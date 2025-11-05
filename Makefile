@@ -305,13 +305,16 @@ release-tag: ## Create and push a new version tag
 	git tag -a $$version -m "Release $$version"; \
 	git push origin $$version
 
-publish-dry: ## Dry run cargo publish
-	@echo "🚀 Performing dry run publish..."
+publish-dry: ## Dry run cargo publish (not used - multigit name taken on crates.io)
+	@echo "⚠️  Note: 'multigit' name is already taken on crates.io"
+	@echo "🚀 Performing dry run publish (for testing only)..."
 	@$(CARGO) publish --dry-run --allow-dirty
 
-publish: ## Publish to crates.io
-	@echo "🚀 Publishing to crates.io..."
-	@$(CARGO) publish
+# Note: multigit name is taken on crates.io, so we don't publish there
+# Releases are distributed via GitHub Releases instead
+# publish: ## Publish to crates.io
+#	@echo "🚀 Publishing to crates.io..."
+#	@$(CARGO) publish
 
 ##@ Cleaning
 

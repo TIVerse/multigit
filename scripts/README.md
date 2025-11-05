@@ -352,11 +352,11 @@ make clean
 # Run tests before release
 make pre-release
 
-# Publish to crates.io
-make publish
-
 # Full CI simulation
 make ci-full
+
+# Create release build
+make release-build
 ```
 
 ---

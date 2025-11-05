@@ -16,6 +16,10 @@ Complete guide to using MultiGit for multi-remote Git synchronization.
 
 ## Installation
 
+### From GitHub Releases
+
+Download pre-built binaries from [GitHub Releases](https://github.com/TIVerse/multigit/releases).
+
 ### From Source
 
 ```bash
@@ -23,17 +27,15 @@ Complete guide to using MultiGit for multi-remote Git synchronization.
 git clone https://github.com/TIVerse/multigit.git
 cd multigit
 
-# Build and install
+# Build release binaries
+cargo build --release
+
+# The binaries are in target/release/
+./target/release/multigit --version
+./target/release/mg --version
+
+# Optionally install to ~/.cargo/bin
 cargo install --path .
-
-# Verify installation
-multigit --version
-```
-
-### From Cargo
-
-```bash
-cargo install multigit
 ```
 
 ## Quick Start

@@ -8,8 +8,6 @@ MultiGit is a production-ready, cross-platform Git multi-remote synchronization 
 
 [![CI Status](https://github.com/TIVerse/multigit/workflows/test/badge.svg)](https://github.com/TIVerse/multigit/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Crates.io](https://img.shields.io/crates/v/multigit.svg)](https://crates.io/crates/multigit)
-[![Documentation](https://docs.rs/multigit/badge.svg)](https://docs.rs/multigit)
 [![Rust Version](https://img.shields.io/badge/rust-1.70%2B-blue.svg)](https://www.rust-lang.org)
 
 ## ✨ Features
@@ -47,19 +45,11 @@ mg status
 
 ## 📦 Installation
 
-### From Source (Cargo)
-
-```bash
-cargo install multigit
-```
-
-**Note**: This installs both `multigit` and `mg` binaries.
-
 ### From GitHub Releases
 
 Download pre-built binaries from [Releases](https://github.com/TIVerse/multigit/releases).
 
-### Build from Source
+### Build from Source (Recommended)
 
 ```bash
 git clone https://github.com/TIVerse/multigit.git

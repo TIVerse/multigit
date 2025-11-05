@@ -226,7 +226,7 @@ cargo doc --no-deps
 ### Monitoring
 
 - ⏳ Monitor GitHub issues
-- ⏳ Track crates.io download stats
+- ⏳ Track GitHub release downloads
 - ⏳ Respond to community feedback
 - ⏳ Fix critical bugs quickly
 
@@ -241,8 +241,8 @@ cargo doc --no-deps
 ## 🔗 Resources
 
 - **Repository**: https://github.com/TIVerse/multigit
-- **Crates.io**: https://crates.io/crates/multigit
-- **Documentation**: https://docs.rs/multigit
+- **Releases**: https://github.com/TIVerse/multigit/releases
+- **Documentation**: https://github.com/TIVerse/multigit/tree/main/docs
 - **Issues**: https://github.com/TIVerse/multigit/issues
 - **Discussions**: https://github.com/TIVerse/multigit/discussions
 
