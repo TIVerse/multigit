@@ -77,6 +77,10 @@ enum Commands {
         /// Force push (use with caution)
         #[arg(short, long)]
         force: bool,
+
+        /// Specific remotes to push to
+        #[arg(long)]
+        remotes: Vec<String>,
     },
 
     /// Pull from primary remote
@@ -98,9 +102,13 @@ enum Commands {
 
     /// Synchronize all remotes
     Sync {
-        /// Force sync (skip conflict detection)
+        /// Branch to sync (default: current branch)
         #[arg(short, long)]
-        force: bool,
+        branch: Option<String>,
+
+        /// Dry run - show what would be done
+        #[arg(long)]
+        dry_run: bool,
     },
 
     /// Show sync status
@@ -335,9 +343,9 @@ fn main() -> Result<()> {
             handle_remote_command(action)?;
         }
 
-        Commands::Push { branch, force } => {
+        Commands::Push { branch, force, remotes } => {
             use multigit::cli::commands::push;
-            runtime.block_on(push::execute(branch, force, Vec::new()))?;
+            runtime.block_on(push::execute(branch, force, remotes))?;
         }
 
         Commands::Pull { from } => {
@@ -350,9 +358,9 @@ fn main() -> Result<()> {
             runtime.block_on(fetch::execute(remotes, all))?;
         }
 
-        Commands::Sync { force: _ } => {
+        Commands::Sync { branch, dry_run } => {
             use multigit::cli::commands::sync;
-            runtime.block_on(sync::execute(None, false))?;
+            runtime.block_on(sync::execute(branch, dry_run))?;
         }
 
         Commands::Status { detailed } => {
