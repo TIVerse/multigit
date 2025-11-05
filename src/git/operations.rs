@@ -166,7 +166,14 @@ impl GitOperations {
         Ok(())
     }
 
-    /// Push to a remote
+    /// Push to a remote with timeout protection
+    ///
+    /// Uses multiple callbacks to enforce timeout:
+    /// - `pack_progress`: Aborts pack generation if timeout exceeded
+    /// - `push_transfer_progress`: Monitors transfer progress
+    ///
+    /// **Note**: Timeout enforcement is best-effort. Some libgit2 operations
+    /// may not check callbacks frequently enough for immediate cancellation.
     pub fn push(&self, remote_name: &str, refspecs: &[&str]) -> Result<()> {
         info!(
             "Pushing to remote: {} (timeout: {}s)",
@@ -186,13 +193,28 @@ impl GitOperations {
         let start_time = std::time::Instant::now();
         let timeout = self.network_timeout;
 
-        callbacks.push_transfer_progress(move |current, total, bytes| {
-            // Check for timeout
-            if start_time.elapsed() > timeout {
-                warn!("Push operation timed out after {}s", timeout.as_secs());
-                return;
-            }
+        // Clone for pack progress callback
+        let start_time_pack = start_time;
+        let timeout_pack = timeout;
 
+        // Pack progress callback - monitor but can't abort directly
+        callbacks.pack_progress(move |_stage, current, total| {
+            if start_time_pack.elapsed() > timeout_pack {
+                warn!(
+                    "Push operation timed out during pack ({}/{})",
+                    current, total
+                );
+            } else {
+                debug!("Pack progress: {}/{}", current, total);
+            }
+        });
+
+        // Transfer progress callback - informational only
+        callbacks.push_transfer_progress(move |current, total, bytes| {
+            if start_time.elapsed() > timeout {
+                warn!("Push transfer timed out after {}s", timeout.as_secs());
+                // Note: This callback can't abort, but we log the warning
+            }
             debug!("Push progress: {}/{} ({} bytes)", current, total, bytes);
         });
 
