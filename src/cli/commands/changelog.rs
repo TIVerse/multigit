@@ -4,6 +4,7 @@
 
 use crate::utils::error::{MultiGitError, Result};
 use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::fs;
 use std::process::Command;
 
@@ -17,23 +18,23 @@ pub fn execute(since: Option<String>, output: Option<String>) -> Result<()> {
     });
 
     let commits = get_commits_since(&since_ref)?;
-    let changelog = format_changelog(&commits)?;
+    let changelog = format_changelog(&commits);
 
     let output_file = output.unwrap_or_else(|| "CHANGELOG.md".to_string());
 
     // Append or create
     let existing = fs::read_to_string(&output_file).unwrap_or_default();
-    
+
     let final_content = if existing.is_empty() {
-        format!("# Changelog\n\n{}", changelog)
+        format!("# Changelog\n\n{changelog}")
     } else {
-        format!("{}\n\n{}", existing, changelog)
+        format!("{existing}\n\n{changelog}")
     };
 
     fs::write(&output_file, final_content)
         .map_err(|e| MultiGitError::other(format!("Failed to write changelog: {e}")))?;
 
-    println!("✅ Changelog written to {}", output_file);
+    println!("✅ Changelog written to {output_file}");
 
     Ok(())
 }
@@ -49,19 +50,19 @@ fn get_last_tag() -> Result<String> {
 
 fn get_commits_since(since: &str) -> Result<Vec<String>> {
     let output = Command::new("git")
-        .args(["log", &format!("{}..HEAD", since), "--pretty=format:%s"])
+        .args(["log", &format!("{since}..HEAD"), "--pretty=format:%s"])
         .output()
         .map_err(|e| MultiGitError::other(format!("Failed to get commits: {e}")))?;
 
     let commits: Vec<String> = String::from_utf8_lossy(&output.stdout)
         .lines()
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
     Ok(commits)
 }
 
-fn format_changelog(commits: &[String]) -> Result<String> {
+fn format_changelog(commits: &[String]) -> String {
     let mut categorized: HashMap<String, Vec<String>> = HashMap::new();
 
     for commit in commits {
@@ -71,10 +72,12 @@ fn format_changelog(commits: &[String]) -> Result<String> {
 
     let mut changelog = String::new();
     let date = chrono::Local::now().format("%Y-%m-%d");
-    changelog.push_str(&format!("## [Unreleased] - {}\n\n", date));
+    writeln!(changelog, "## [Unreleased] - {date}\n").unwrap();
 
     // Order: feat, fix, docs, style, refactor, perf, test, build, ci, chore
-    let order = vec!["feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore"];
+    let order = vec![
+        "feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore",
+    ];
 
     for category in order {
         if let Some(messages) = categorized.get(category) {
@@ -96,13 +99,13 @@ fn format_changelog(commits: &[String]) -> Result<String> {
             changelog.push_str("\n\n");
 
             for msg in messages {
-                changelog.push_str(&format!("- {}\n", msg));
+                writeln!(changelog, "- {msg}").unwrap();
             }
             changelog.push('\n');
         }
     }
 
-    Ok(changelog)
+    changelog
 }
 
 fn parse_conventional_commit(commit: &str) -> (String, String) {

@@ -18,7 +18,7 @@ pub fn execute(no_edit: bool) -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to get last commit: {e}")))?;
 
     let last_commit = String::from_utf8_lossy(&output.stdout);
-    println!("Last commit: {}\n", last_commit);
+    println!("Last commit: {last_commit}\n");
 
     let options = vec![
         "📝 Amend with staged changes (keep message)",
@@ -30,7 +30,7 @@ pub fn execute(no_edit: bool) -> Result<()> {
     let choice = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("What would you like to do?")
         .items(&options)
-        .default(if no_edit { 0 } else { 1 })
+        .default(usize::from(!no_edit))
         .interact()?;
 
     match choice {
@@ -55,7 +55,7 @@ fn amend_no_edit() -> Result<()> {
         interactive::print_success("✅ Commit amended!");
     } else {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to amend: {}", error)));
+        return Err(MultiGitError::other(format!("Failed to amend: {error}")));
     }
 
     Ok(())
@@ -81,7 +81,7 @@ fn amend_with_edit() -> Result<()> {
             interactive::print_success("✅ Commit amended with new message!");
         } else {
             let error = String::from_utf8_lossy(&output.stderr);
-            return Err(MultiGitError::other(format!("Failed to amend: {}", error)));
+            return Err(MultiGitError::other(format!("Failed to amend: {error}")));
         }
     } else {
         println!("Amend cancelled.");
@@ -100,7 +100,7 @@ fn amend_all() -> Result<()> {
 
     if !output.status.success() {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to stage: {}", error)));
+        return Err(MultiGitError::other(format!("Failed to stage: {error}")));
     }
 
     let edit = Confirm::with_theme(&ColorfulTheme::default())
@@ -122,7 +122,7 @@ fn amend_all() -> Result<()> {
         interactive::print_success("✅ All changes staged and commit amended!");
     } else {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to amend: {}", error)));
+        return Err(MultiGitError::other(format!("Failed to amend: {error}")));
     }
 
     Ok(())
@@ -145,7 +145,7 @@ fn amend_author() -> Result<()> {
         interactive::print_success("✅ Author updated!");
     } else {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to amend: {}", error)));
+        return Err(MultiGitError::other(format!("Failed to amend: {error}")));
     }
 
     Ok(())

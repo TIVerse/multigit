@@ -22,7 +22,7 @@ pub fn execute(force: bool, dry_run: bool) -> Result<()> {
 
     let remotes: Vec<String> = String::from_utf8_lossy(&output.stdout)
         .lines()
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
     if remotes.len() < 2 {
@@ -33,7 +33,7 @@ pub fn execute(force: bool, dry_run: bool) -> Result<()> {
 
     println!("Mirroring {} remotes:\n", remotes.len());
     for remote in &remotes {
-        println!("  • {}", remote);
+        println!("  • {remote}");
     }
     println!();
 
@@ -51,7 +51,7 @@ pub fn execute(force: bool, dry_run: bool) -> Result<()> {
 
     // Mirror all branches and tags
     for remote in &remotes {
-        println!("\n📡 Mirroring to {}...", remote);
+        println!("\n📡 Mirroring to {remote}...");
 
         if dry_run {
             println!("  [DRY RUN] Would push all branches and tags");

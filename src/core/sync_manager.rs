@@ -179,7 +179,7 @@ impl SyncManager {
                     .references_glob(&format!("refs/remotes/{remote}/*"))
                     .ok()
                     .map(|refs| {
-                        refs.filter_map(|r| r.ok())
+                        refs.filter_map(std::result::Result::ok)
                             .filter_map(|r| r.target())
                             .collect()
                     })
@@ -196,16 +196,14 @@ impl SyncManager {
                             .references_glob(&format!("refs/remotes/{remote}/*"))
                             .ok()
                             .map(|refs| {
-                                refs.filter_map(|r| r.ok())
+                                refs.filter_map(std::result::Result::ok)
                                     .filter_map(|r| r.target())
                                     .collect()
                             })
                             .unwrap_or_default();
 
                         // Count new OIDs that weren't in the before set
-                        let new_refs = remote_refs_after
-                            .difference(&remote_refs_before)
-                            .count();
+                        let new_refs = remote_refs_after.difference(&remote_refs_before).count();
 
                         // Use new refs as a proxy for fetched commits
                         // Note: This counts updated refs, not individual commits

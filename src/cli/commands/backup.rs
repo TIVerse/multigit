@@ -53,17 +53,17 @@ fn perform_auto_backup() -> Result<()> {
 
     // Push to all remotes
     for remote in &remotes {
-        println!("Backing up to {}...", remote);
-        
+        println!("Backing up to {remote}...");
+
         let output = Command::new("git")
             .args(["push", remote, "--all"])
             .output()
             .map_err(|e| MultiGitError::other(format!("Failed to push: {e}")))?;
 
         if output.status.success() {
-            println!("  ✅ Backed up to {}", remote);
+            println!("  ✅ Backed up to {remote}");
         } else {
-            println!("  ⚠️  Warning: Backup to {} failed", remote);
+            println!("  ⚠️  Warning: Backup to {remote} failed");
         }
     }
 
@@ -76,9 +76,9 @@ fn perform_auto_backup() -> Result<()> {
             .map_err(|e| MultiGitError::other(format!("Failed to push tags: {e}")))?;
 
         if output.status.success() {
-            println!("  ✅ Tags backed up to {}", remote);
+            println!("  ✅ Tags backed up to {remote}");
         } else {
-            println!("  ⚠️  Warning: Tag backup to {} failed", remote);
+            println!("  ⚠️  Warning: Tag backup to {remote} failed");
         }
     }
 

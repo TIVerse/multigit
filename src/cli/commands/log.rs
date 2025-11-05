@@ -11,9 +11,8 @@ use std::process::Command;
 pub fn execute(limit: Option<usize>, branch: Option<String>, author: Option<String>) -> Result<()> {
     println!("\n📜 Commit History Browser\n");
 
-    let _git_ops = GitOperations::open(".").map_err(|_| {
-        MultiGitError::other("Not in a git repository.")
-    })?;
+    let _git_ops =
+        GitOperations::open(".").map_err(|_| MultiGitError::other("Not in a git repository."))?;
 
     let limit_val = limit.unwrap_or(20);
 
@@ -29,7 +28,7 @@ pub fn execute(limit: Option<usize>, branch: Option<String>, author: Option<Stri
     }
 
     if let Some(ref a) = author {
-        args.push(format!("--author={}", a));
+        args.push(format!("--author={a}"));
     }
 
     let output = Command::new("git")
@@ -62,7 +61,7 @@ pub fn execute(limit: Option<usize>, branch: Option<String>, author: Option<Stri
                     parts[2], // time
                 )
             } else {
-                line.to_string()
+                (*line).to_string()
             }
         })
         .collect();
@@ -87,7 +86,7 @@ pub fn execute(limit: Option<usize>, branch: Option<String>, author: Option<Stri
 /// Show detailed commit information
 fn show_commit_details(hash: &str) -> Result<()> {
     println!("\n═══════════════════════════════════════════════════════════════");
-    println!("Commit Details: {}", hash);
+    println!("Commit Details: {hash}");
     println!("═══════════════════════════════════════════════════════════════\n");
 
     // Show full commit
@@ -97,7 +96,7 @@ fn show_commit_details(hash: &str) -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to show commit: {e}")))?;
 
     let details = String::from_utf8_lossy(&output.stdout);
-    println!("{}", details);
+    println!("{details}");
 
     Ok(())
 }
@@ -111,7 +110,7 @@ pub fn show_graph(limit: Option<usize>) -> Result<()> {
     let output = Command::new("git")
         .args([
             "log",
-            &format!("-{}", limit_val),
+            &format!("-{limit_val}"),
             "--graph",
             "--pretty=format:%C(yellow)%h%Creset %C(blue)%an%Creset %C(green)%ar%Creset - %s",
             "--abbrev-commit",
@@ -121,7 +120,7 @@ pub fn show_graph(limit: Option<usize>) -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to get graph: {e}")))?;
 
     let graph = String::from_utf8_lossy(&output.stdout);
-    println!("{}", graph);
+    println!("{graph}");
 
     Ok(())
 }

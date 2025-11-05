@@ -2,8 +2,7 @@
 //!
 //! Manage reusable commit templates
 
-use crate::utils::error::{MultiGitError, Result};
-use std::fs;
+use crate::utils::error::Result;
 use std::path::PathBuf;
 
 /// Execute template manager
@@ -18,6 +17,7 @@ pub fn execute() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn get_templates_dir() -> PathBuf {
     dirs::config_dir()
         .unwrap_or_else(|| PathBuf::from("."))

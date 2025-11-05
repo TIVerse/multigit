@@ -68,7 +68,10 @@ pub fn execute() -> Result<()> {
                 interactive::print_info("No modified files found.");
             } else {
                 stage_files(&modified)?;
-                interactive::print_success(&format!("✅ {} modified file(s) staged!", modified.len()));
+                interactive::print_success(&format!(
+                    "✅ {} modified file(s) staged!",
+                    modified.len()
+                ));
             }
         }
         3 => {
@@ -156,7 +159,7 @@ fn select_files_to_stage(files: &[(String, String)]) -> Result<Vec<String>> {
                 "renamed" => "📋",
                 _ => "📄",
             };
-            format!("{} [{}] {}", emoji, status, path)
+            format!("{emoji} [{status}] {path}")
         })
         .collect();
 
@@ -176,7 +179,7 @@ fn stage_all_files(files: &[(String, String)]) -> Result<()> {
         Command::new("git")
             .args(["add", file])
             .output()
-            .map_err(|e| MultiGitError::other(format!("Failed to stage {}: {}", file, e)))?;
+            .map_err(|e| MultiGitError::other(format!("Failed to stage {file}: {e}")))?;
     }
     Ok(())
 }
@@ -187,7 +190,7 @@ fn stage_files(files: &[String]) -> Result<()> {
         Command::new("git")
             .args(["add", file])
             .output()
-            .map_err(|e| MultiGitError::other(format!("Failed to stage {}: {}", file, e)))?;
+            .map_err(|e| MultiGitError::other(format!("Failed to stage {file}: {e}")))?;
     }
     Ok(())
 }
@@ -198,7 +201,7 @@ fn view_diff_and_stage(files: &[(String, String)]) -> Result<()> {
 
     for (file, status) in files {
         println!("─────────────────────────────────────");
-        println!("File: {} [{}]", file, status);
+        println!("File: {file} [{status}]");
         println!("─────────────────────────────────────");
 
         // Show diff
@@ -209,19 +212,19 @@ fn view_diff_and_stage(files: &[(String, String)]) -> Result<()> {
 
         let diff = String::from_utf8_lossy(&output.stdout);
         if !diff.is_empty() {
-            println!("{}", diff);
+            println!("{diff}");
         } else if *status == "new" {
             println!("(New file - no diff to show)");
         }
 
         println!();
         let stage = Confirm::with_theme(&ColorfulTheme::default())
-            .with_prompt(format!("Stage {}?", file))
+            .with_prompt(format!("Stage {file}?"))
             .default(true)
             .interact()?;
 
         if stage {
-            stage_files(&[file.clone()])?;
+            stage_files(std::slice::from_ref(file))?;
             println!("✅ Staged\n");
         } else {
             println!("⏭️  Skipped\n");

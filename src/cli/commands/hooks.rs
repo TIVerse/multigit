@@ -3,14 +3,13 @@
 //! Easy setup and management of git hooks
 
 use crate::utils::error::{MultiGitError, Result};
-use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
 /// Execute hooks manager
 pub fn execute() -> Result<()> {
     println!("\n🪝 Git Hooks Manager\n");
-    
+
     let git_dir = get_git_dir()?;
     let hooks_dir = git_dir.join("hooks");
 
@@ -26,7 +25,7 @@ pub fn execute() -> Result<()> {
     println!("  - commit-msg: Validate commit message");
     println!("  - pre-push: Run before push");
     println!("  - post-merge: Run after merge");
-    
+
     Ok(())
 }
 

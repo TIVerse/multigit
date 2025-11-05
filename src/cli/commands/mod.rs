@@ -13,6 +13,7 @@ pub mod create;
 pub mod daemon;
 pub mod doctor;
 pub mod fetch;
+pub mod git_passthrough;
 pub mod hooks;
 pub mod init;
 pub mod log;

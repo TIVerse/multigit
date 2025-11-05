@@ -1,4 +1,4 @@
-//! Setup wizard for easy MultiGit configuration
+//! Setup wizard for easy `MultiGit` configuration
 //!
 //! Provides an interactive, user-friendly setup experience.
 
@@ -84,15 +84,14 @@ pub async fn run_wizard() -> Result<()> {
         let (provider_display, provider_id) = PROVIDERS[idx];
 
         println!("\n╭──────────────────────────────────────────╮");
-        println!("│  Setting up: {}                    ", provider_display);
+        println!("│  Setting up: {provider_display}                    ");
         println!("╰──────────────────────────────────────────╯\n");
 
         // Add provider with guided setup
         if let Err(e) = add_provider_guided(&mut config, provider_id).await {
-            println!("⚠️  Failed to set up {}: {}", provider_display, e);
+            println!("⚠️  Failed to set up {provider_display}: {e}");
             println!(
-                "   You can try again later with: multigit remote add {} <username>",
-                provider_id
+                "   You can try again later with: multigit remote add {provider_id} <username>"
             );
         }
     }
@@ -143,7 +142,7 @@ pub async fn run_wizard() -> Result<()> {
 /// Add a provider with guided setup
 async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> {
     // Get username
-    let username = interactive::prompt_text(&format!("Enter your {} username", provider), None)?;
+    let username = interactive::prompt_text(&format!("Enter your {provider} username"), None)?;
 
     // Show token instructions
     show_token_instructions(provider);
@@ -209,7 +208,7 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
     };
 
     config.add_remote(provider.to_string(), remote_config);
-    println!("✅ {} added to configuration", provider);
+    println!("✅ {provider} added to configuration");
 
     // Add the actual git remote to .git/config
     if let Ok(git_ops) = GitOperations::open(".") {
@@ -226,19 +225,16 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
         // Add git remote
         match git_ops.add_remote(provider, &remote_url) {
             Ok(()) => {
-                println!("✅ Git remote added: {} -> {}", provider, remote_url);
+                println!("✅ Git remote added: {provider} -> {remote_url}");
 
                 // Optionally fetch to create tracking refs
                 if let Err(e) = git_ops.fetch(provider, &[]) {
-                    println!("⚠️  Initial fetch failed (normal for new repos): {}", e);
+                    println!("⚠️  Initial fetch failed (normal for new repos): {e}");
                 }
             }
             Err(e) => {
-                println!("⚠️  Failed to add git remote: {}", e);
-                println!(
-                    "   You can manually add it with: git remote add {} {}",
-                    provider, remote_url
-                );
+                println!("⚠️  Failed to add git remote: {e}");
+                println!("   You can manually add it with: git remote add {provider} {remote_url}");
             }
         }
     }
@@ -248,7 +244,7 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
 
 /// Show token instructions for a provider
 fn show_token_instructions(provider: &str) {
-    println!("\n📝 How to get your {} token:\n", provider);
+    println!("\n📝 How to get your {provider} token:\n");
 
     match provider {
         "github" => {
@@ -355,7 +351,7 @@ fn configure_preferences(config: &mut Config) -> Result<()> {
 
 /// Quick setup for a single provider (simpler flow)
 pub async fn quick_setup(provider: &str, _username: String) -> Result<()> {
-    println!("\n🚀 Quick Setup for {}\n", provider);
+    println!("\n🚀 Quick Setup for {provider}\n");
 
     let mut config = if Config::is_initialized() {
         Config::load()?
@@ -368,7 +364,7 @@ pub async fn quick_setup(provider: &str, _username: String) -> Result<()> {
     add_provider_guided(&mut config, provider).await?;
     config.save()?;
 
-    println!("\n✅ {} setup complete!", provider);
+    println!("\n✅ {provider} setup complete!");
     println!("💡 Run 'multigit status' to see your configuration");
 
     Ok(())

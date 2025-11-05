@@ -10,14 +10,13 @@ use std::process::Command;
 
 /// Execute interactive branch switch
 pub fn execute(new_branch: Option<String>) -> Result<()> {
-    let _git_ops = GitOperations::open(".").map_err(|_| {
-        MultiGitError::other("Not in a git repository.")
-    })?;
+    let _git_ops =
+        GitOperations::open(".").map_err(|_| MultiGitError::other("Not in a git repository."))?;
 
     if let Some(branch_name) = new_branch {
         // Direct switch
         switch_to_branch(&branch_name)?;
-        interactive::print_success(&format!("✅ Switched to branch '{}'", branch_name));
+        interactive::print_success(&format!("✅ Switched to branch '{branch_name}'"));
         return Ok(());
     }
 
@@ -33,16 +32,16 @@ pub fn execute(new_branch: Option<String>) -> Result<()> {
 
     // Current branch
     let current = get_current_branch()?;
-    println!("Current branch: {}\n", current);
+    println!("Current branch: {current}\n");
 
     // Format branches with indicators
     let branch_options: Vec<String> = branches
         .iter()
         .map(|b| {
             if b == &current {
-                format!("→ {} (current)", b)
+                format!("→ {b} (current)")
             } else {
-                format!("  {}", b)
+                format!("  {b}")
             }
         })
         .collect();
@@ -55,9 +54,9 @@ pub fn execute(new_branch: Option<String>) -> Result<()> {
 
     if let Some(idx) = selection {
         let selected_branch = &branches[idx];
-        
+
         if selected_branch == &current {
-            println!("Already on branch '{}'", current);
+            println!("Already on branch '{current}'");
         } else {
             // Check for uncommitted changes
             if has_uncommitted_changes()? {
@@ -74,7 +73,7 @@ pub fn execute(new_branch: Option<String>) -> Result<()> {
             }
 
             switch_to_branch(selected_branch)?;
-            interactive::print_success(&format!("✅ Switched to branch '{}'", selected_branch));
+            interactive::print_success(&format!("✅ Switched to branch '{selected_branch}'"));
         }
     }
 
@@ -112,10 +111,14 @@ pub fn create_and_switch(from: Option<String>) -> Result<()> {
 
     if !output.status.success() {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to create branch: {}", error)));
+        return Err(MultiGitError::other(format!(
+            "Failed to create branch: {error}"
+        )));
     }
 
-    interactive::print_success(&format!("✅ Created and switched to branch '{}'", branch_name));
+    interactive::print_success(&format!(
+        "✅ Created and switched to branch '{branch_name}'"
+    ));
 
     Ok(())
 }
@@ -165,7 +168,7 @@ fn switch_to_branch(branch: &str) -> Result<()> {
 
     if !output.status.success() {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to switch: {}", error)));
+        return Err(MultiGitError::other(format!("Failed to switch: {error}")));
     }
 
     Ok(())

@@ -29,7 +29,7 @@ fn interactive_merge() -> Result<()> {
 
     let remotes: Vec<String> = String::from_utf8_lossy(&output.stdout)
         .lines()
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
     if remotes.is_empty() {
@@ -59,7 +59,7 @@ fn interactive_merge() -> Result<()> {
 }
 
 fn merge_from_remote(remote: &str, branch: &str) -> Result<()> {
-    println!("Merging {}/{} into current branch...\n", remote, branch);
+    println!("Merging {remote}/{branch} into current branch...\n");
 
     // Fetch first
     let output = Command::new("git")
@@ -69,14 +69,14 @@ fn merge_from_remote(remote: &str, branch: &str) -> Result<()> {
 
     if !output.status.success() {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Fetch failed: {}", error)));
+        return Err(MultiGitError::other(format!("Fetch failed: {error}")));
     }
 
     // Check for conflicts
-    let remote_branch = format!("{}/{}", remote, branch);
-    
+    let remote_branch = format!("{remote}/{branch}");
+
     let confirm = Confirm::with_theme(&ColorfulTheme::default())
-        .with_prompt(format!("Proceed to merge {}?", remote_branch))
+        .with_prompt(format!("Proceed to merge {remote_branch}?"))
         .default(true)
         .interact()?;
 
@@ -98,7 +98,7 @@ fn merge_from_remote(remote: &str, branch: &str) -> Result<()> {
         if error.contains("CONFLICT") {
             println!("⚠️  Conflicts detected! Use 'mg conflict' to resolve.");
         } else {
-            return Err(MultiGitError::other(format!("Merge failed: {}", error)));
+            return Err(MultiGitError::other(format!("Merge failed: {error}")));
         }
     }
 

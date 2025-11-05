@@ -13,6 +13,7 @@ use crate::utils::error::{MultiGitError, Result};
 use tracing::{info, warn};
 
 /// Add a new remote provider
+#[allow(clippy::too_many_lines)]
 pub async fn add_remote(
     provider_name: String,
     username: String,

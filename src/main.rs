@@ -8,7 +8,9 @@ use multigit::utils::logger::{init_logger, LogLevel, LoggerConfig};
 #[command(name = env!("CARGO_BIN_NAME"))]
 #[command(version)]
 #[command(about = "Universal Git multi-remote automation tool")]
-#[command(long_about = "MultiGit (mg) - Synchronize repositories across multiple Git hosting providers.\n\nAvailable as both 'multigit' and 'mg' commands for your convenience.")]
+#[command(
+    long_about = "MultiGit (mg) - Synchronize repositories across multiple Git hosting providers.\n\nAvailable as both 'multigit' and 'mg' commands for your convenience."
+)]
 struct Cli {
     /// Increase verbosity (-v, -vv, -vvv)
     #[arg(short, long, action = clap::ArgAction::Count)]
@@ -155,7 +157,7 @@ enum Commands {
     },
 
     /// Interactive conventional commit helper
-    #[command(name = "cc", alias = "commit")]
+    #[command(name = "cc")]
     Cc,
 
     /// Interactive commit history browser
@@ -258,6 +260,87 @@ enum Commands {
 
     /// Git aliases manager
     Alias,
+
+    /// Git commit (standard git commit)
+    #[command(name = "commit")]
+    Commit {
+        /// Commit message
+        #[arg(short, long)]
+        message: Option<String>,
+
+        /// Amend previous commit
+        #[arg(short, long)]
+        amend: bool,
+
+        /// All changes
+        #[arg(short, long)]
+        all: bool,
+
+        /// Additional git commit arguments
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// Git diff (standard git diff)
+    Diff {
+        /// Files or commits to diff
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// Git show (show commit details)
+    Show {
+        /// Commit or file to show
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// Git reset (reset current HEAD)
+    Reset {
+        /// Reset arguments
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// Git revert (revert commits)
+    Revert {
+        /// Commit to revert
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// Git cherry-pick
+    #[command(name = "cherry-pick")]
+    CherryPick {
+        /// Commits to cherry-pick
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// Git rebase
+    Rebase {
+        /// Rebase arguments
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// Git blame (show file annotations)
+    Blame {
+        /// File to blame
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// Git grep (search repository)
+    Grep {
+        /// Search pattern and arguments
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// Pass through to git (for any other git command)
+    #[command(external_subcommand)]
+    Git(Vec<String>),
 
     /// Show version information
     Version,
@@ -458,7 +541,11 @@ fn main() -> Result<()> {
             handle_remote_command(action)?;
         }
 
-        Commands::Push { branch, force, remotes } => {
+        Commands::Push {
+            branch,
+            force,
+            remotes,
+        } => {
             use multigit::cli::commands::push;
             runtime.block_on(push::execute(branch, force, remotes))?;
         }
@@ -527,7 +614,12 @@ fn main() -> Result<()> {
             conventional_commit::execute()?;
         }
 
-        Commands::Log { limit, branch, author, graph } => {
+        Commands::Log {
+            limit,
+            branch,
+            author,
+            graph,
+        } => {
             use multigit::cli::commands::log;
             if graph {
                 log::show_graph(limit)?;
@@ -536,7 +628,11 @@ fn main() -> Result<()> {
             }
         }
 
-        Commands::Switch { branch, create, from } => {
+        Commands::Switch {
+            branch,
+            create,
+            from,
+        } => {
             use multigit::cli::commands::switch;
             if create {
                 switch::create_and_switch(from)?;
@@ -603,6 +699,91 @@ fn main() -> Result<()> {
         Commands::Alias => {
             use multigit::cli::commands::alias;
             alias::execute()?;
+        }
+
+        Commands::Commit {
+            message,
+            amend,
+            all,
+            args,
+        } => {
+            use multigit::cli::commands::git_passthrough;
+            let mut git_args = vec!["commit".to_string()];
+
+            if let Some(msg) = message {
+                git_args.push("-m".to_string());
+                git_args.push(msg);
+            }
+            if amend {
+                git_args.push("--amend".to_string());
+            }
+            if all {
+                git_args.push("-a".to_string());
+            }
+            git_args.extend(args);
+
+            git_passthrough::execute(git_args)?;
+        }
+
+        Commands::Diff { args } => {
+            use multigit::cli::commands::git_passthrough;
+            let mut git_args = vec!["diff".to_string()];
+            git_args.extend(args);
+            git_passthrough::execute(git_args)?;
+        }
+
+        Commands::Show { args } => {
+            use multigit::cli::commands::git_passthrough;
+            let mut git_args = vec!["show".to_string()];
+            git_args.extend(args);
+            git_passthrough::execute(git_args)?;
+        }
+
+        Commands::Reset { args } => {
+            use multigit::cli::commands::git_passthrough;
+            let mut git_args = vec!["reset".to_string()];
+            git_args.extend(args);
+            git_passthrough::execute(git_args)?;
+        }
+
+        Commands::Revert { args } => {
+            use multigit::cli::commands::git_passthrough;
+            let mut git_args = vec!["revert".to_string()];
+            git_args.extend(args);
+            git_passthrough::execute(git_args)?;
+        }
+
+        Commands::CherryPick { args } => {
+            use multigit::cli::commands::git_passthrough;
+            let mut git_args = vec!["cherry-pick".to_string()];
+            git_args.extend(args);
+            git_passthrough::execute(git_args)?;
+        }
+
+        Commands::Rebase { args } => {
+            use multigit::cli::commands::git_passthrough;
+            let mut git_args = vec!["rebase".to_string()];
+            git_args.extend(args);
+            git_passthrough::execute(git_args)?;
+        }
+
+        Commands::Blame { args } => {
+            use multigit::cli::commands::git_passthrough;
+            let mut git_args = vec!["blame".to_string()];
+            git_args.extend(args);
+            git_passthrough::execute(git_args)?;
+        }
+
+        Commands::Grep { args } => {
+            use multigit::cli::commands::git_passthrough;
+            let mut git_args = vec!["grep".to_string()];
+            git_args.extend(args);
+            git_passthrough::execute(git_args)?;
+        }
+
+        Commands::Git(args) => {
+            use multigit::cli::commands::git_passthrough;
+            git_passthrough::execute(args)?;
         }
 
         Commands::Conflict { action } => {

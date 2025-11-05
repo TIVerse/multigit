@@ -2,13 +2,13 @@
 //!
 //! Track time spent on branches and features
 
-use crate::utils::error::{MultiGitError, Result};
+use crate::utils::error::Result;
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 struct Session {
     branch: String,
     start_time: DateTime<Local>,
@@ -28,6 +28,7 @@ pub fn execute() -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn get_session_file() -> PathBuf {
     dirs::data_dir()
         .unwrap_or_else(|| PathBuf::from("."))

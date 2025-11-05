@@ -15,13 +15,22 @@ const COMMIT_TYPES: &[(&str, &str)] = &[
     ("feat", "✨ A new feature"),
     ("fix", "🐛 A bug fix"),
     ("docs", "📚 Documentation only changes"),
-    ("style", "💎 Code style changes (formatting, semicolons, etc.)"),
-    ("refactor", "♻️  Code refactoring without changing functionality"),
+    (
+        "style",
+        "💎 Code style changes (formatting, semicolons, etc.)",
+    ),
+    (
+        "refactor",
+        "♻️  Code refactoring without changing functionality",
+    ),
     ("perf", "⚡ Performance improvements"),
     ("test", "✅ Adding or updating tests"),
     ("build", "🔨 Build system or external dependencies"),
     ("ci", "👷 CI/CD configuration changes"),
-    ("chore", "🔧 Other changes that don't modify src or test files"),
+    (
+        "chore",
+        "🔧 Other changes that don't modify src or test files",
+    ),
     ("revert", "⏪ Revert a previous commit"),
 ];
 
@@ -103,7 +112,7 @@ pub fn execute() -> Result<()> {
     // Step 8: Preview and confirm
     println!("\n📝 Commit Message Preview:\n");
     println!("{}", "─".repeat(60));
-    println!("{}", commit_message);
+    println!("{commit_message}");
     println!("{}", "─".repeat(60));
     println!();
 
@@ -123,14 +132,12 @@ pub fn execute() -> Result<()> {
                 commit_with_message(&edited)?;
                 interactive::print_success("✅ Commit created successfully!");
                 return Ok(());
-            } else {
-                interactive::print_info("Commit cancelled.");
-                return Ok(());
             }
-        } else {
             interactive::print_info("Commit cancelled.");
             return Ok(());
         }
+        interactive::print_info("Commit cancelled.");
+        return Ok(());
     }
 
     // Commit
@@ -149,19 +156,19 @@ fn get_modified_files(git_ops: &GitOperations) -> Result<Vec<(String, String)>> 
     let mut status_opts = git2::StatusOptions::new();
     status_opts.include_untracked(true);
     status_opts.exclude_submodules(true);
-    
+
     let statuses = repo
         .statuses(Some(&mut status_opts))
         .map_err(|e| MultiGitError::other(format!("Failed to get status: {e}")))?;
 
     for entry in statuses.iter() {
         let status = entry.status();
-        
+
         // Skip ignored files
         if status.is_ignored() {
             continue;
         }
-        
+
         let path = entry.path().unwrap_or("").to_string();
 
         let status_str = if status.is_wt_new() || status.is_index_new() {
@@ -189,10 +196,7 @@ fn select_files_to_stage(files: &[(String, String)]) -> Result<Vec<String>> {
     println!("📂 Select files to include in this commit:\n");
 
     // Quick options
-    let quick_options = vec![
-        "✅ All files",
-        "🎯 Select individually",
-    ];
+    let quick_options = vec!["✅ All files", "🎯 Select individually"];
 
     let quick_choice = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("How would you like to select files?")
@@ -204,7 +208,7 @@ fn select_files_to_stage(files: &[(String, String)]) -> Result<Vec<String>> {
         // All files selected
         println!("\n✅ All {} file(s) will be committed\n", files.len());
         for (path, status) in files {
-            println!("  [{}] {}", status, path);
+            println!("  [{status}] {path}");
         }
         println!();
         return Ok(files.iter().map(|(path, _)| path.clone()).collect());
@@ -214,7 +218,7 @@ fn select_files_to_stage(files: &[(String, String)]) -> Result<Vec<String>> {
     println!();
     let options: Vec<String> = files
         .iter()
-        .map(|(path, status)| format!("[{}] {}", status, path))
+        .map(|(path, status)| format!("[{status}] {path}"))
         .collect();
 
     let defaults = vec![true; files.len()]; // All selected by default
@@ -236,7 +240,7 @@ fn stage_files(files: &[String]) -> Result<()> {
         Command::new("git")
             .args(["add", file])
             .output()
-            .map_err(|e| MultiGitError::other(format!("Failed to stage {}: {}", file, e)))?;
+            .map_err(|e| MultiGitError::other(format!("Failed to stage {file}: {e}")))?;
     }
     Ok(())
 }
@@ -246,7 +250,7 @@ fn select_commit_type() -> Result<String> {
     println!();
     let items: Vec<String> = COMMIT_TYPES
         .iter()
-        .map(|(name, desc)| format!("{:12} {}", name, desc))
+        .map(|(name, desc)| format!("{name:12} {desc}"))
         .collect();
 
     let selection = Select::with_theme(&ColorfulTheme::default())
@@ -270,13 +274,13 @@ fn select_scope(selected_files: &[String]) -> Result<Option<String>> {
 
     // Add detected scopes first
     for scope in &detected_scopes {
-        scope_options.push(format!("{} (detected)", scope));
+        scope_options.push(format!("{scope} (detected)"));
     }
 
     // Add common scopes that weren't detected
     for scope in COMMON_SCOPES {
         if !detected_scopes.contains(*scope) {
-            scope_options.push(scope.to_string());
+            scope_options.push((*scope).to_string());
         }
     }
 
@@ -333,11 +337,14 @@ fn detect_scopes_from_files(files: &[String]) -> HashSet<String> {
             }
 
             // Also check immediate parent for files in src/
-            if parts.len() >= 1 {
+            if !parts.is_empty() {
                 if let Some(dir) = parts[0].as_os_str().to_str() {
                     if dir == "tests" {
                         scopes.insert("test".to_string());
-                    } else if file.ends_with(".md") {
+                    } else if std::path::Path::new(file)
+                        .extension()
+                        .is_some_and(|ext| ext.eq_ignore_ascii_case("md"))
+                    {
                         scopes.insert("docs".to_string());
                     } else if file == "Cargo.toml" || file == "Cargo.lock" {
                         scopes.insert("build".to_string());
@@ -360,7 +367,7 @@ fn enter_description() -> Result<String> {
                 Err("Description cannot be empty")
             } else if input.len() > 72 {
                 Err("Description should be 72 characters or less")
-            } else if input.chars().next().map_or(false, |c| c.is_uppercase()) {
+            } else if input.chars().next().is_some_and(char::is_uppercase) {
                 Err("Start with lowercase (conventional commits style)")
             } else {
                 Ok(())

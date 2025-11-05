@@ -48,9 +48,9 @@ fn undo_last_commit(keep_changes: bool) -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to get last commit: {e}")))?;
 
     let last_commit = String::from_utf8_lossy(&output.stdout);
-    
+
     println!("\nLast commit:");
-    println!("{}", last_commit);
+    println!("{last_commit}");
 
     let action = if keep_changes {
         "undo commit and keep changes in working directory"
@@ -59,7 +59,7 @@ fn undo_last_commit(keep_changes: bool) -> Result<()> {
     };
 
     let confirm = Confirm::with_theme(&ColorfulTheme::default())
-        .with_prompt(format!("Proceed to {}?", action))
+        .with_prompt(format!("Proceed to {action}?"))
         .default(false)
         .interact()?;
 
@@ -71,7 +71,7 @@ fn undo_last_commit(keep_changes: bool) -> Result<()> {
     let reset_type = if keep_changes { "soft" } else { "hard" };
 
     let output = Command::new("git")
-        .args(["reset", &format!("--{}", reset_type), "HEAD~1"])
+        .args(["reset", &format!("--{reset_type}"), "HEAD~1"])
         .output()
         .map_err(|e| MultiGitError::other(format!("Failed to reset: {e}")))?;
 
@@ -83,7 +83,7 @@ fn undo_last_commit(keep_changes: bool) -> Result<()> {
         }
     } else {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to undo: {}", error)));
+        return Err(MultiGitError::other(format!("Failed to undo: {error}")));
     }
 
     Ok(())
@@ -100,7 +100,7 @@ fn unstage_all() -> Result<()> {
         interactive::print_success("✅ All files unstaged!");
     } else {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to unstage: {}", error)));
+        return Err(MultiGitError::other(format!("Failed to unstage: {error}")));
     }
 
     Ok(())
@@ -109,7 +109,7 @@ fn unstage_all() -> Result<()> {
 /// Discard all uncommitted changes
 fn discard_all_changes() -> Result<()> {
     println!("\n⚠️  WARNING: This will discard ALL uncommitted changes!");
-    
+
     let confirm = Confirm::with_theme(&ColorfulTheme::default())
         .with_prompt("Are you absolutely sure?")
         .default(false)
@@ -128,7 +128,9 @@ fn discard_all_changes() -> Result<()> {
 
     if !output.status.success() {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to discard changes: {}", error)));
+        return Err(MultiGitError::other(format!(
+            "Failed to discard changes: {error}"
+        )));
     }
 
     // Clean untracked files
@@ -192,10 +194,13 @@ fn discard_file_changes() -> Result<()> {
         Command::new("git")
             .args(["checkout", "--", file])
             .output()
-            .map_err(|e| MultiGitError::other(format!("Failed to discard {}: {}", file, e)))?;
+            .map_err(|e| MultiGitError::other(format!("Failed to discard {file}: {e}")))?;
     }
 
-    interactive::print_success(&format!("✅ Discarded changes in {} file(s)!", selections.len()));
+    interactive::print_success(&format!(
+        "✅ Discarded changes in {} file(s)!",
+        selections.len()
+    ));
 
     Ok(())
 }
@@ -242,7 +247,7 @@ fn reset_to_commit() -> Result<()> {
     };
 
     let confirm = Confirm::with_theme(&ColorfulTheme::default())
-        .with_prompt(format!("Reset to {} using --{}?", commit_hash, reset_type))
+        .with_prompt(format!("Reset to {commit_hash} using --{reset_type}?"))
         .default(false)
         .interact()?;
 
@@ -252,15 +257,15 @@ fn reset_to_commit() -> Result<()> {
     }
 
     let output = Command::new("git")
-        .args(["reset", &format!("--{}", reset_type), commit_hash])
+        .args(["reset", &format!("--{reset_type}"), commit_hash])
         .output()
         .map_err(|e| MultiGitError::other(format!("Failed to reset: {e}")))?;
 
     if output.status.success() {
-        interactive::print_success(&format!("✅ Reset to {} ({})", commit_hash, reset_type));
+        interactive::print_success(&format!("✅ Reset to {commit_hash} ({reset_type})"));
     } else {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to reset: {}", error)));
+        return Err(MultiGitError::other(format!("Failed to reset: {error}")));
     }
 
     Ok(())

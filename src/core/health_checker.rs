@@ -132,7 +132,7 @@ impl HealthChecker {
     /// Test if a remote is reachable
     ///
     /// Uses `git ls-remote` to verify the remote can be contacted.
-    /// Returns (reachable, optional_error_message).
+    /// Returns (reachable, `optional_error_message`).
     fn test_remote_reachability(&self, remote_name: &str) -> (bool, Option<String>) {
         debug!("Testing reachability of remote: {}", remote_name);
 
@@ -144,7 +144,7 @@ impl HealthChecker {
 
         // Create callbacks with minimal timeout
         let mut callbacks = git2::RemoteCallbacks::new();
-        
+
         // Set a short timeout for health checks (10 seconds)
         let start_time = std::time::Instant::now();
         let timeout = std::time::Duration::from_secs(10);
@@ -157,7 +157,8 @@ impl HealthChecker {
         // Try to connect with ls-remote (lightweight operation)
         // Use a scope to ensure the Result is dropped before disconnect
         let (reachable, issue) = {
-            let connection_result = remote.connect_auth(git2::Direction::Fetch, Some(callbacks), None);
+            let connection_result =
+                remote.connect_auth(git2::Direction::Fetch, Some(callbacks), None);
 
             match connection_result {
                 Ok(connection) => {
@@ -167,11 +168,15 @@ impl HealthChecker {
                 }
                 Err(e) => {
                     let error_str = e.to_string();
-                    
+
                     // Categorize the error for better user feedback
-                    let issue = if error_str.contains("authentication") || error_str.contains("credentials") {
+                    let issue = if error_str.contains("authentication")
+                        || error_str.contains("credentials")
+                    {
                         Some("Authentication failed - check credentials".to_string())
-                    } else if error_str.contains("Could not resolve host") || error_str.contains("network") {
+                    } else if error_str.contains("Could not resolve host")
+                        || error_str.contains("network")
+                    {
                         Some("Network error - check connectivity".to_string())
                     } else if error_str.contains("timeout") {
                         Some("Connection timeout - remote may be slow or unavailable".to_string())

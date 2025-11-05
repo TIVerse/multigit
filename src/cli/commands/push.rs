@@ -14,6 +14,38 @@ pub async fn execute(branch: Option<String>, force: bool, remotes: Vec<String>) 
     // Load config to get settings
     let config = Config::load().unwrap_or_default();
 
+    // Check if MultiGit is configured with remotes
+    let has_multigit_remotes = !config.enabled_remotes().is_empty();
+
+    // If no MultiGit remotes and no specific remotes requested, fallback to git push
+    if !has_multigit_remotes && remotes.is_empty() {
+        info!("No MultiGit remotes configured, falling back to git push");
+        use std::process::Command;
+
+        let mut git_args = vec!["push".to_string()];
+        if let Some(ref b) = branch {
+            git_args.push(b.clone());
+        }
+        if force {
+            git_args.push("--force".to_string());
+        }
+
+        let output = Command::new("git")
+            .args(&git_args)
+            .stdin(std::process::Stdio::inherit())
+            .stdout(std::process::Stdio::inherit())
+            .stderr(std::process::Stdio::inherit())
+            .output()
+            .map_err(|e| {
+                crate::utils::error::MultiGitError::other(format!("Failed to execute git: {e}"))
+            })?;
+
+        if !output.status.success() {
+            std::process::exit(output.status.code().unwrap_or(1));
+        }
+        return Ok(());
+    }
+
     let manager = SyncManager::new(".")?.with_max_parallel(config.settings.max_parallel);
 
     // Get branch to push
@@ -33,7 +65,7 @@ pub async fn execute(branch: Option<String>, force: bool, remotes: Vec<String>) 
         let config = Config::load().unwrap_or_default();
         let enabled: Vec<String> = config.enabled_remotes().keys().cloned().collect();
         if enabled.is_empty() {
-            println!("⚠ No remotes configured. Use 'multigit remote add' to configure remotes.");
+            println!("⚠ No MultiGit remotes configured. Using standard git push behavior.");
             return Ok(());
         }
         enabled

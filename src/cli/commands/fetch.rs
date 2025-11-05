@@ -13,25 +13,41 @@ pub async fn execute(remotes: Vec<String>, all: bool) -> Result<()> {
 
     // Load config to get settings
     let config = Config::load().unwrap_or_default();
-
-    let manager = SyncManager::new(".")?.with_max_parallel(config.settings.max_parallel);
+    let has_multigit_remotes = !config.enabled_remotes().is_empty();
 
     // Determine which remotes to fetch from
     let fetch_remotes = if all {
         // Load all enabled remotes from config
-        let config = Config::load().unwrap_or_default();
-        let enabled: Vec<String> = config.enabled_remotes().keys().cloned().collect();
-        if enabled.is_empty() {
-            println!("⚠️  No remotes configured. Use 'multigit remote add' to add remotes.");
+        if has_multigit_remotes {
+            let enabled: Vec<String> = config.enabled_remotes().keys().cloned().collect();
+            enabled
+        } else {
+            // Fallback to git fetch --all
+            info!("No MultiGit remotes, falling back to git fetch --all");
+            use std::process::Command;
+            let output = Command::new("git")
+                .args(["fetch", "--all"])
+                .stdin(std::process::Stdio::inherit())
+                .stdout(std::process::Stdio::inherit())
+                .stderr(std::process::Stdio::inherit())
+                .output()
+                .map_err(|e| {
+                    crate::utils::error::MultiGitError::other(format!("Failed to execute git: {e}"))
+                })?;
+
+            if !output.status.success() {
+                std::process::exit(output.status.code().unwrap_or(1));
+            }
             return Ok(());
         }
-        enabled
     } else if !remotes.is_empty() {
         remotes
     } else {
         // Default to origin if no remotes specified
         vec!["origin".to_string()]
     };
+
+    let manager = SyncManager::new(".")?.with_max_parallel(config.settings.max_parallel);
 
     println!("\n📡 Fetching from {} remote(s)...\n", fetch_remotes.len());
 

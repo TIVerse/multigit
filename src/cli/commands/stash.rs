@@ -63,7 +63,7 @@ fn save_stash() -> Result<()> {
         interactive::print_success("✅ Changes stashed successfully!");
     } else {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to stash: {}", error)));
+        return Err(MultiGitError::other(format!("Failed to stash: {error}")));
     }
 
     Ok(())
@@ -83,7 +83,7 @@ fn list_stashes() -> Result<()> {
     } else {
         println!("\n📋 Stash List:");
         println!("─────────────────────────────────────────────────────────────");
-        println!("{}", stashes);
+        println!("{stashes}");
         println!("─────────────────────────────────────────────────────────────");
     }
 
@@ -93,7 +93,7 @@ fn list_stashes() -> Result<()> {
 /// Apply a stash
 fn apply_stash(stash_id: Option<String>) -> Result<()> {
     let mut args = vec!["stash", "apply"];
-    
+
     if let Some(ref id) = stash_id {
         args.push(id);
     }
@@ -107,7 +107,9 @@ fn apply_stash(stash_id: Option<String>) -> Result<()> {
         interactive::print_success("✅ Stash applied successfully!");
     } else {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to apply stash: {}", error)));
+        return Err(MultiGitError::other(format!(
+            "Failed to apply stash: {error}"
+        )));
     }
 
     Ok(())
@@ -124,7 +126,9 @@ fn pop_stash() -> Result<()> {
         interactive::print_success("✅ Stash popped successfully!");
     } else {
         let error = String::from_utf8_lossy(&output.stderr);
-        return Err(MultiGitError::other(format!("Failed to pop stash: {}", error)));
+        return Err(MultiGitError::other(format!(
+            "Failed to pop stash: {error}"
+        )));
     }
 
     Ok(())
@@ -163,7 +167,7 @@ fn view_stash() -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to show stash: {e}")))?;
 
     let diff = String::from_utf8_lossy(&output.stdout);
-    println!("\n{}", diff);
+    println!("\n{diff}");
 
     Ok(())
 }
@@ -193,7 +197,7 @@ fn drop_stash() -> Result<()> {
     let stash_id = stash_line.split(':').next().unwrap_or("stash@{0}");
 
     let confirm = Confirm::with_theme(&ColorfulTheme::default())
-        .with_prompt(format!("Drop {}?", stash_id))
+        .with_prompt(format!("Drop {stash_id}?"))
         .default(false)
         .interact()?;
 
@@ -204,10 +208,12 @@ fn drop_stash() -> Result<()> {
             .map_err(|e| MultiGitError::other(format!("Failed to drop stash: {e}")))?;
 
         if output.status.success() {
-            interactive::print_success(&format!("✅ Dropped {}", stash_id));
+            interactive::print_success(&format!("✅ Dropped {stash_id}"));
         } else {
             let error = String::from_utf8_lossy(&output.stderr);
-            return Err(MultiGitError::other(format!("Failed to drop stash: {}", error)));
+            return Err(MultiGitError::other(format!(
+                "Failed to drop stash: {error}"
+            )));
         }
     }
 
@@ -231,7 +237,9 @@ fn clear_stashes() -> Result<()> {
             interactive::print_success("✅ All stashes cleared!");
         } else {
             let error = String::from_utf8_lossy(&output.stderr);
-            return Err(MultiGitError::other(format!("Failed to clear stashes: {}", error)));
+            return Err(MultiGitError::other(format!(
+                "Failed to clear stashes: {error}"
+            )));
         }
     }
 

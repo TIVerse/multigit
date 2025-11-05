@@ -3,7 +3,6 @@
 //! Show contribution graphs, commit frequency, and more
 
 use crate::utils::error::{MultiGitError, Result};
-use std::collections::HashMap;
 use std::process::Command;
 
 /// Execute stats viewer
@@ -27,7 +26,7 @@ fn show_commit_stats() -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to count commits: {e}")))?;
 
     let total_commits = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    println!("  Total commits: {}", total_commits);
+    println!("  Total commits: {total_commits}");
 
     // Commits this week
     let output = Command::new("git")
@@ -36,7 +35,7 @@ fn show_commit_stats() -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to count commits: {e}")))?;
 
     let week_commits = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    println!("  Commits this week: {}", week_commits);
+    println!("  Commits this week: {week_commits}");
 
     // Commits today
     let output = Command::new("git")
@@ -45,7 +44,7 @@ fn show_commit_stats() -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to count commits: {e}")))?;
 
     let today_commits = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    println!("  Commits today: {}\n", today_commits);
+    println!("  Commits today: {today_commits}\n");
 
     Ok(())
 }
@@ -59,7 +58,7 @@ fn show_contributor_stats() -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to get contributors: {e}")))?;
 
     let contributors = String::from_utf8_lossy(&output.stdout);
-    
+
     for (i, line) in contributors.lines().take(5).enumerate() {
         println!("  {}. {}", i + 1, line.trim());
     }
@@ -78,7 +77,7 @@ fn show_file_stats() -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to list files: {e}")))?;
 
     let file_count = String::from_utf8_lossy(&output.stdout).lines().count();
-    println!("  Tracked files: {}", file_count);
+    println!("  Tracked files: {file_count}");
 
     // Count branches
     let output = Command::new("git")
@@ -87,7 +86,7 @@ fn show_file_stats() -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to count branches: {e}")))?;
 
     let branch_count = String::from_utf8_lossy(&output.stdout).lines().count();
-    println!("  Branches: {}", branch_count);
+    println!("  Branches: {branch_count}");
 
     // Count tags
     let output = Command::new("git")
@@ -96,7 +95,7 @@ fn show_file_stats() -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to count tags: {e}")))?;
 
     let tag_count = String::from_utf8_lossy(&output.stdout).lines().count();
-    println!("  Tags: {}\n", tag_count);
+    println!("  Tags: {tag_count}\n");
 
     Ok(())
 }

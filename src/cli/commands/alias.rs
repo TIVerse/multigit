@@ -17,7 +17,7 @@ pub fn execute() -> Result<()> {
     println!("  mg alias add <name> <cmd>  - Create new alias");
     println!("  mg alias remove <name>     - Remove alias");
     println!("  mg alias edit <name>       - Edit alias");
-    
+
     Ok(())
 }
 
@@ -28,7 +28,7 @@ fn list_aliases() -> Result<()> {
         .map_err(|e| MultiGitError::other(format!("Failed to get aliases: {e}")))?;
 
     let aliases = String::from_utf8_lossy(&output.stdout);
-    
+
     if aliases.trim().is_empty() {
         println!("No aliases configured.");
     } else {
@@ -37,7 +37,7 @@ fn list_aliases() -> Result<()> {
         for line in aliases.lines() {
             if let Some((name, cmd)) = line.split_once(' ') {
                 let alias_name = name.trim_start_matches("alias.");
-                println!("  {} = {}", alias_name, cmd);
+                println!("  {alias_name} = {cmd}");
             }
         }
         println!("─────────────────────────────────────");
