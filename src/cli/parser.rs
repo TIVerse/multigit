@@ -1,6 +1,16 @@
 //! CLI argument parsing utilities
 //!
-//! Defines the command-line interface using clap.
+//! **NOTE**: This module contains an alternative CLI parser definition that is
+//! currently **not used** by the main binary. The active CLI definition is in
+//! `src/main.rs`.
+//!
+//! This module is preserved for:
+//! - Historical reference
+//! - Potential future library API
+//! - Alternative CLI implementations
+//!
+//! **For contributors**: If you need to modify CLI arguments, edit `src/main.rs`
+//! instead. This file may be removed in a future version.
 
 use clap::{Parser, Subcommand};
 
