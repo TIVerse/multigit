@@ -94,6 +94,9 @@ impl HealthChecker {
     }
 
     /// Check health of all remotes
+    ///
+    /// Tests each remote's reachability using `git ls-remote` equivalent.
+    /// This performs actual network connectivity checks.
     fn check_remotes(&self) -> Vec<RemoteHealth> {
         debug!("Checking remotes");
 
@@ -112,17 +115,79 @@ impl HealthChecker {
 
             let url = remote.url().unwrap_or("").to_string();
 
-            // For now, we assume remotes are reachable
-            // A real implementation would test connectivity
+            // Test actual reachability with ls-remote
+            let (reachable, issue) = self.test_remote_reachability(name);
+
             health.push(RemoteHealth {
                 name: name.to_string(),
                 url,
-                reachable: true,
-                issue: None,
+                reachable,
+                issue,
             });
         }
 
         health
+    }
+
+    /// Test if a remote is reachable
+    ///
+    /// Uses `git ls-remote` to verify the remote can be contacted.
+    /// Returns (reachable, optional_error_message).
+    fn test_remote_reachability(&self, remote_name: &str) -> (bool, Option<String>) {
+        debug!("Testing reachability of remote: {}", remote_name);
+
+        // Attempt to connect to the remote and list refs
+        let mut remote = match self.git_ops.inner().find_remote(remote_name) {
+            Ok(r) => r,
+            Err(e) => return (false, Some(format!("Failed to find remote: {e}"))),
+        };
+
+        // Create callbacks with minimal timeout
+        let mut callbacks = git2::RemoteCallbacks::new();
+        
+        // Set a short timeout for health checks (10 seconds)
+        let start_time = std::time::Instant::now();
+        let timeout = std::time::Duration::from_secs(10);
+
+        callbacks.transfer_progress(move |_| {
+            // Abort if timeout exceeded
+            start_time.elapsed() <= timeout
+        });
+
+        // Try to connect with ls-remote (lightweight operation)
+        // Use a scope to ensure the Result is dropped before disconnect
+        let (reachable, issue) = {
+            let connection_result = remote.connect_auth(git2::Direction::Fetch, Some(callbacks), None);
+
+            match connection_result {
+                Ok(connection) => {
+                    // Drop the connection to release the borrow
+                    drop(connection);
+                    (true, None)
+                }
+                Err(e) => {
+                    let error_str = e.to_string();
+                    
+                    // Categorize the error for better user feedback
+                    let issue = if error_str.contains("authentication") || error_str.contains("credentials") {
+                        Some("Authentication failed - check credentials".to_string())
+                    } else if error_str.contains("Could not resolve host") || error_str.contains("network") {
+                        Some("Network error - check connectivity".to_string())
+                    } else if error_str.contains("timeout") {
+                        Some("Connection timeout - remote may be slow or unavailable".to_string())
+                    } else {
+                        Some(format!("Connection failed: {error_str}"))
+                    };
+
+                    (false, issue)
+                }
+            }
+        };
+
+        // Disconnect after processing (Result is now dropped)
+        remote.disconnect().ok();
+
+        (reachable, issue)
     }
 
     /// Quick check - returns true if everything is OK
