@@ -33,6 +33,17 @@ enum Commands {
         no_interactive: bool,
     },
 
+    /// Interactive setup wizard (easiest way to get started)
+    Setup {
+        /// Quick setup for a specific provider
+        #[arg(short, long)]
+        provider: Option<String>,
+
+        /// Username for quick setup
+        #[arg(short, long)]
+        username: Option<String>,
+    },
+
     /// Create repository on all configured platforms
     Create {
         /// Repository name
@@ -293,6 +304,17 @@ fn main() -> Result<()> {
         Commands::Init { no_interactive: _ } => {
             use multigit::cli::commands::init;
             init::execute(".")?;
+        }
+
+        Commands::Setup { provider, username } => {
+            use multigit::cli::commands::setup;
+            if let (Some(prov), Some(user)) = (provider, username) {
+                // Quick setup mode
+                runtime.block_on(setup::quick_setup(&prov, user))?;
+            } else {
+                // Full wizard mode
+                runtime.block_on(setup::run_wizard())?;
+            }
         }
 
         Commands::Create {

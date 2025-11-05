@@ -11,6 +11,7 @@ pub mod init;
 pub mod pull;
 pub mod push;
 pub mod remote;
+pub mod setup;
 pub mod status;
 pub mod sync;
 pub mod tag;
