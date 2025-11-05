@@ -149,7 +149,9 @@ pub async fn add_remote(
         interactive::print_warning(
             "Not in a git repository. Remote added to config, but git remote not created.",
         );
-        interactive::print_info("Run this command from within a git repository to add git remotes.");
+        interactive::print_info(
+            "Run this command from within a git repository to add git remotes.",
+        );
     }
 
     interactive::print_success(&format!(
@@ -227,7 +229,9 @@ pub fn remove_remote(name: String, force: bool) -> Result<()> {
     }
 
     // Remove from config
-    let remote_config = config.remotes.remove(&name_lower)
+    let remote_config = config
+        .remotes
+        .remove(&name_lower)
         .expect("Remote should exist - we checked with contains_key");
     config.save()?;
 

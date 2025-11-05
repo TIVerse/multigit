@@ -108,7 +108,11 @@ impl GitOperations {
 
     /// Fetch from a remote
     pub fn fetch(&self, remote_name: &str, refspecs: &[&str]) -> Result<()> {
-        info!("Fetching from remote: {} (timeout: {}s)", remote_name, self.network_timeout.as_secs());
+        info!(
+            "Fetching from remote: {} (timeout: {}s)",
+            remote_name,
+            self.network_timeout.as_secs()
+        );
 
         let mut remote = self
             .repo
@@ -164,7 +168,11 @@ impl GitOperations {
 
     /// Push to a remote
     pub fn push(&self, remote_name: &str, refspecs: &[&str]) -> Result<()> {
-        info!("Pushing to remote: {} (timeout: {}s)", remote_name, self.network_timeout.as_secs());
+        info!(
+            "Pushing to remote: {} (timeout: {}s)",
+            remote_name,
+            self.network_timeout.as_secs()
+        );
 
         let mut remote = self
             .repo

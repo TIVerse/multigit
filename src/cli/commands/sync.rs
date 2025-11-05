@@ -14,8 +14,7 @@ pub async fn execute(branch: Option<String>, dry_run: bool) -> Result<()> {
     // Load config to get settings
     let config = Config::load().unwrap_or_default();
 
-    let manager = SyncManager::new(".")?.
-        with_max_parallel(config.settings.max_parallel);
+    let manager = SyncManager::new(".")?.with_max_parallel(config.settings.max_parallel);
 
     // Get branch to sync
     let branch_name = match branch {

@@ -85,7 +85,7 @@ pub async fn run_wizard() -> Result<()> {
 
     for &idx in &selections {
         let (provider_display, provider_id) = PROVIDERS[idx];
-        
+
         println!("\n╭──────────────────────────────────────────╮");
         println!("│  Setting up: {}                    ", provider_display);
         println!("╰──────────────────────────────────────────╯\n");
@@ -93,7 +93,10 @@ pub async fn run_wizard() -> Result<()> {
         // Add provider with guided setup
         if let Err(e) = add_provider_guided(&mut config, provider_id).await {
             println!("⚠️  Failed to set up {}: {}", provider_display, e);
-            println!("   You can try again later with: multigit remote add {} <username>", provider_id);
+            println!(
+                "   You can try again later with: multigit remote add {} <username>",
+                provider_id
+            );
         }
     }
 
@@ -143,10 +146,7 @@ pub async fn run_wizard() -> Result<()> {
 /// Add a provider with guided setup
 async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> {
     // Get username
-    let username = interactive::prompt_text(
-        &format!("Enter your {} username", provider),
-        None,
-    )?;
+    let username = interactive::prompt_text(&format!("Enter your {} username", provider), None)?;
 
     // Show token instructions
     show_token_instructions(provider);
@@ -166,7 +166,7 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
             .default(false)
             .interact()
             .map_err(|e| MultiGitError::other(format!("Prompt failed: {e}")))?;
-        
+
         if use_custom {
             Some(interactive::prompt_text(
                 "Enter your GitLab instance URL",
@@ -183,7 +183,7 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
     println!("\n🔍 Testing connection...");
 
     let test_provider = create_test_provider(provider, &username, &token, api_url.as_deref())?;
-    
+
     match test_provider.test_connection().await {
         Ok(true) => {
             println!("✅ Connection successful!");
@@ -238,7 +238,10 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
             }
             Err(e) => {
                 println!("⚠️  Failed to add git remote: {}", e);
-                println!("   You can manually add it with: git remote add {} {}", provider, remote_url);
+                println!(
+                    "   You can manually add it with: git remote add {} {}",
+                    provider, remote_url
+                );
             }
         }
     }
@@ -298,28 +301,42 @@ fn create_test_provider(
     api_url: Option<&str>,
 ) -> Result<Arc<dyn Provider>> {
     let provider_instance: Arc<dyn Provider> = match provider {
-        "github" => Arc::new(GitHubProvider::new(token.to_string(), username.to_string())?),
+        "github" => Arc::new(GitHubProvider::new(
+            token.to_string(),
+            username.to_string(),
+        )?),
         "gitlab" => {
             let url = api_url.map(std::string::ToString::to_string);
-            Arc::new(GitLabProvider::new(token.to_string(), username.to_string(), url)?)
+            Arc::new(GitLabProvider::new(
+                token.to_string(),
+                username.to_string(),
+                url,
+            )?)
         }
-        "bitbucket" => {
-            Arc::new(BitbucketProvider::new(username.to_string(), token.to_string())?)
-        }
+        "bitbucket" => Arc::new(BitbucketProvider::new(
+            username.to_string(),
+            token.to_string(),
+        )?),
         "gitea" => {
-            let url = api_url.ok_or_else(|| {
-                MultiGitError::config("Gitea requires an API URL".to_string())
-            })?;
-            Arc::new(GiteaProvider::new(token.to_string(), username.to_string(), url.to_string())?)
-        }
-        "codeberg" => {
+            let url = api_url
+                .ok_or_else(|| MultiGitError::config("Gitea requires an API URL".to_string()))?;
             Arc::new(GiteaProvider::new(
                 token.to_string(),
                 username.to_string(),
-                "https://codeberg.org".to_string(),
+                url.to_string(),
             )?)
         }
-        _ => return Err(MultiGitError::other(format!("Provider {} not supported", provider))),
+        "codeberg" => Arc::new(GiteaProvider::new(
+            token.to_string(),
+            username.to_string(),
+            "https://codeberg.org".to_string(),
+        )?),
+        _ => {
+            return Err(MultiGitError::other(format!(
+                "Provider {} not supported",
+                provider
+            )))
+        }
     };
 
     Ok(provider_instance)

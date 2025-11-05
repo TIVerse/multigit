@@ -77,7 +77,9 @@ pub async fn execute(name: String, description: Option<String>, private: bool) -
 
     // Try to create on Bitbucket
     if let Some(bitbucket_config) = config.remotes.get("bitbucket") {
-        if let Ok(password) = auth_manager.retrieve_credential("bitbucket", &bitbucket_config.username) {
+        if let Ok(password) =
+            auth_manager.retrieve_credential("bitbucket", &bitbucket_config.username)
+        {
             match create_on_bitbucket(&bitbucket_config.username, &password, &repo_config).await {
                 Ok(url) => {
                     println!("✓ Bitbucket: Created successfully");

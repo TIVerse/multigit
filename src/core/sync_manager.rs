@@ -76,7 +76,10 @@ impl SyncManager {
 
             let task = tokio::spawn(async move {
                 // Acquire semaphore permit to limit concurrency
-                let _permit = permit.acquire().await.expect("Semaphore should not be closed");
+                let _permit = permit
+                    .acquire()
+                    .await
+                    .expect("Semaphore should not be closed");
                 let start = std::time::Instant::now();
 
                 // Open a new GitOperations instance for this task
@@ -153,7 +156,10 @@ impl SyncManager {
 
             let task = tokio::spawn(async move {
                 // Acquire semaphore permit to limit concurrency
-                let _permit = permit.acquire().await.expect("Semaphore should not be closed");
+                let _permit = permit
+                    .acquire()
+                    .await
+                    .expect("Semaphore should not be closed");
 
                 let ops = match GitOperations::open(&repo_path) {
                     Ok(ops) => ops,
@@ -174,7 +180,7 @@ impl SyncManager {
                 match ops.fetch(&remote, &[]) {
                     Ok(()) => {
                         info!("Successfully fetched from {}", remote);
-                        
+
                         // Try to count new commits (best effort)
                         let commits_fetched = if let Some(old_oid) = old_head_oid {
                             if let Ok(new_oid) = ops.inner().refname_to_id("HEAD") {
@@ -182,7 +188,8 @@ impl SyncManager {
                                     0
                                 } else {
                                     // Count commits between old and new HEAD
-                                    ops.inner().graph_ahead_behind(new_oid, old_oid)
+                                    ops.inner()
+                                        .graph_ahead_behind(new_oid, old_oid)
                                         .map(|(ahead, _)| ahead)
                                         .unwrap_or(0)
                                 }

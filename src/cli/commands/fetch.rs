@@ -14,8 +14,7 @@ pub async fn execute(remotes: Vec<String>, all: bool) -> Result<()> {
     // Load config to get settings
     let config = Config::load().unwrap_or_default();
 
-    let manager = SyncManager::new(".")?.
-        with_max_parallel(config.settings.max_parallel);
+    let manager = SyncManager::new(".")?.with_max_parallel(config.settings.max_parallel);
 
     // Determine which remotes to fetch from
     let fetch_remotes = if all {
