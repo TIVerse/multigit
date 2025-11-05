@@ -12,9 +12,13 @@ pub enum MultiGitError {
     #[error("Git operation failed: {0}")]
     GitError(#[from] git2::Error),
 
-    /// Network error during API calls
+    /// Network error during API calls (from reqwest)
     #[error("Network error: {0}")]
     NetworkError(#[from] reqwest::Error),
+
+    /// Network error with custom message (retryable)
+    #[error("Network error: {0}")]
+    NetworkMessage(String),
 
     /// Authentication failure
     #[error("Authentication failed for {provider}: {reason}")]
@@ -145,9 +149,9 @@ impl MultiGitError {
         Self::Other(message.into())
     }
 
-    /// Create a network error from a message
+    /// Create a network error from a message (retryable)
     pub fn network(message: impl Into<String>) -> Self {
-        Self::Other(message.into())
+        Self::NetworkMessage(message.into())
     }
 
     /// Create a daemon error
@@ -202,7 +206,10 @@ impl MultiGitError {
     /// Check if this error is retryable
     #[must_use]
     pub fn is_retryable(&self) -> bool {
-        matches!(self, Self::NetworkError(_) | Self::RateLimitError { .. })
+        matches!(
+            self,
+            Self::NetworkError(_) | Self::NetworkMessage(_) | Self::RateLimitError { .. }
+        )
     }
 
     /// Check if this is a authentication-related error
