@@ -4,6 +4,8 @@
 
 MultiGit is a production-ready, cross-platform Git multi-remote synchronization tool built in Rust. Push, pull, and sync your code across multiple Git hosting platforms (GitHub, GitLab, Bitbucket, Codeberg, Gitea/Forgejo) with a single command.
 
+**Available as both `multigit` and `mg` commands for your convenience!**
+
 [![CI Status](https://github.com/TIVerse/multigit/workflows/test/badge.svg)](https://github.com/TIVerse/multigit/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Crates.io](https://img.shields.io/crates/v/multigit.svg)](https://crates.io/crates/multigit)
@@ -25,18 +27,20 @@ MultiGit is a production-ready, cross-platform Git multi-remote synchronization 
 
 ```bash
 # Initialize MultiGit in your repository
-multigit init
+mg init                    # or 'multigit init'
 
 # Add remote platforms
-multigit remote add github <username>
-multigit remote add gitlab <username>
+mg remote add github <username>
+mg remote add gitlab <username>
 
 # Sync to all remotes
-multigit sync
+mg sync
 
 # Check status
-multigit status
+mg status
 ```
+
+**💡 Tip**: Use `mg` for quick commands or `multigit` for scripts - they're identical!
 
 ## 📦 Installation
 
@@ -45,6 +49,8 @@ multigit status
 ```bash
 cargo install multigit
 ```
+
+**Note**: This installs both `multigit` and `mg` binaries.
 
 ### From GitHub Releases
 
@@ -57,6 +63,7 @@ git clone https://github.com/TIVerse/multigit.git
 cd multigit
 cargo build --release
 ./target/release/multigit --version
+./target/release/mg --version          # Both binaries are built
 ```
 
 ## 🚀 Usage
