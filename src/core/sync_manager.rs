@@ -173,37 +173,52 @@ impl SyncManager {
                     }
                 };
 
-                // Get current HEAD commit to compare later
-                let old_head_oid = ops.inner().refname_to_id("HEAD").ok();
+                // Get all remote refs before fetch to compare
+                let remote_refs_before: std::collections::HashSet<_> = ops
+                    .inner()
+                    .references_glob(&format!("refs/remotes/{remote}/*"))
+                    .ok()
+                    .map(|refs| {
+                        refs.filter_map(|r| r.ok())
+                            .filter_map(|r| r.target())
+                            .collect()
+                    })
+                    .unwrap_or_default();
 
                 // Fetch all refs from the remote
                 match ops.fetch(&remote, &[]) {
                     Ok(()) => {
                         info!("Successfully fetched from {}", remote);
 
-                        // Try to count new commits (best effort)
-                        let commits_fetched = if let Some(old_oid) = old_head_oid {
-                            if let Ok(new_oid) = ops.inner().refname_to_id("HEAD") {
-                                if old_oid == new_oid {
-                                    0
-                                } else {
-                                    // Count commits between old and new HEAD
-                                    ops.inner()
-                                        .graph_ahead_behind(new_oid, old_oid)
-                                        .map(|(ahead, _)| ahead)
-                                        .unwrap_or(0)
-                                }
-                            } else {
-                                0
-                            }
-                        } else {
-                            0
-                        };
+                        // Count new/updated refs by comparing OIDs
+                        let remote_refs_after: std::collections::HashSet<_> = ops
+                            .inner()
+                            .references_glob(&format!("refs/remotes/{remote}/*"))
+                            .ok()
+                            .map(|refs| {
+                                refs.filter_map(|r| r.ok())
+                                    .filter_map(|r| r.target())
+                                    .collect()
+                            })
+                            .unwrap_or_default();
+
+                        // Count new OIDs that weren't in the before set
+                        let new_refs = remote_refs_after
+                            .difference(&remote_refs_before)
+                            .count();
+
+                        // Use new refs as a proxy for fetched commits
+                        // Note: This counts updated refs, not individual commits
+                        let commits_fetched = new_refs;
 
                         FetchResult {
                             remote,
                             success: true,
-                            message: "Fetch successful".to_string(),
+                            message: if commits_fetched > 0 {
+                                format!("Fetch successful ({new_refs} ref(s) updated)")
+                            } else {
+                                "Fetch successful (already up to date)".to_string()
+                            },
                             commits_fetched,
                         }
                     }
