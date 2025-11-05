@@ -24,6 +24,9 @@ pub async fn execute(name: String, description: Option<String>, private: bool) -
         private,
     };
 
+    // Load config to get configured remotes
+    let config = crate::core::config::Config::load().unwrap_or_default();
+
     // Initialize auth manager
     let auth_manager = AuthManager::new(AuthBackend::Keyring, false);
 
@@ -31,54 +34,66 @@ pub async fn execute(name: String, description: Option<String>, private: bool) -
     let mut results = Vec::new();
 
     // Try to create on GitHub
-    if let Ok(token) = auth_manager.retrieve_credential("github", "user") {
-        match create_on_github(&token, &repo_config).await {
-            Ok(url) => {
-                println!("✓ GitHub: Created successfully");
-                println!("  URL: {url}");
-                results.push(("github", true));
+    if let Some(github_config) = config.remotes.get("github") {
+        if let Ok(token) = auth_manager.retrieve_credential("github", &github_config.username) {
+            match create_on_github(&token, &github_config.username, &repo_config).await {
+                Ok(url) => {
+                    println!("✓ GitHub: Created successfully");
+                    println!("  URL: {url}");
+                    results.push(("github", true));
+                }
+                Err(e) => {
+                    println!("✗ GitHub: Failed - {e}");
+                    results.push(("github", false));
+                }
             }
-            Err(e) => {
-                println!("✗ GitHub: Failed - {e}");
-                results.push(("github", false));
-            }
+        } else {
+            println!("⊘ GitHub: Credentials not found");
         }
     } else {
-        println!("⊘ GitHub: Not configured (run 'multigit remote add github')");
+        println!("⊘ GitHub: Not configured (run 'multigit remote add github <username>')");
     }
 
     // Try to create on GitLab
-    if let Ok(token) = auth_manager.retrieve_credential("gitlab", "user") {
-        match create_on_gitlab(&token, &repo_config).await {
-            Ok(url) => {
-                println!("✓ GitLab: Created successfully");
-                println!("  URL: {url}");
-                results.push(("gitlab", true));
+    if let Some(gitlab_config) = config.remotes.get("gitlab") {
+        if let Ok(token) = auth_manager.retrieve_credential("gitlab", &gitlab_config.username) {
+            match create_on_gitlab(&token, &gitlab_config.username, &repo_config).await {
+                Ok(url) => {
+                    println!("✓ GitLab: Created successfully");
+                    println!("  URL: {url}");
+                    results.push(("gitlab", true));
+                }
+                Err(e) => {
+                    println!("✗ GitLab: Failed - {e}");
+                    results.push(("gitlab", false));
+                }
             }
-            Err(e) => {
-                println!("✗ GitLab: Failed - {e}");
-                results.push(("gitlab", false));
-            }
+        } else {
+            println!("⊘ GitLab: Credentials not found");
         }
     } else {
-        println!("⊘ GitLab: Not configured (run 'multigit remote add gitlab')");
+        println!("⊘ GitLab: Not configured (run 'multigit remote add gitlab <username>')");
     }
 
     // Try to create on Bitbucket
-    if let Ok(password) = auth_manager.retrieve_credential("bitbucket", "user") {
-        match create_on_bitbucket("user", &password, &repo_config).await {
-            Ok(url) => {
-                println!("✓ Bitbucket: Created successfully");
-                println!("  URL: {url}");
-                results.push(("bitbucket", true));
+    if let Some(bitbucket_config) = config.remotes.get("bitbucket") {
+        if let Ok(password) = auth_manager.retrieve_credential("bitbucket", &bitbucket_config.username) {
+            match create_on_bitbucket(&bitbucket_config.username, &password, &repo_config).await {
+                Ok(url) => {
+                    println!("✓ Bitbucket: Created successfully");
+                    println!("  URL: {url}");
+                    results.push(("bitbucket", true));
+                }
+                Err(e) => {
+                    println!("✗ Bitbucket: Failed - {e}");
+                    results.push(("bitbucket", false));
+                }
             }
-            Err(e) => {
-                println!("✗ Bitbucket: Failed - {e}");
-                results.push(("bitbucket", false));
-            }
+        } else {
+            println!("⊘ Bitbucket: Credentials not found");
         }
     } else {
-        println!("⊘ Bitbucket: Not configured (run 'multigit remote add bitbucket')");
+        println!("⊘ Bitbucket: Not configured (run 'multigit remote add bitbucket <username>')");
     }
 
     // Summary
@@ -97,8 +112,8 @@ pub async fn execute(name: String, description: Option<String>, private: bool) -
 }
 
 /// Create repository on GitHub
-async fn create_on_github(token: &str, config: &RepoConfig) -> Result<String> {
-    let provider = GitHubProvider::new(token.to_string(), "user".to_string())?;
+async fn create_on_github(token: &str, username: &str, config: &RepoConfig) -> Result<String> {
+    let provider = GitHubProvider::new(token.to_string(), username.to_string())?;
     let repo = provider
         .create_repo(config.clone())
         .await
@@ -107,8 +122,8 @@ async fn create_on_github(token: &str, config: &RepoConfig) -> Result<String> {
 }
 
 /// Create repository on GitLab
-async fn create_on_gitlab(token: &str, config: &RepoConfig) -> Result<String> {
-    let provider = GitLabProvider::new(token.to_string(), "user".to_string(), None)?;
+async fn create_on_gitlab(token: &str, username: &str, config: &RepoConfig) -> Result<String> {
+    let provider = GitLabProvider::new(token.to_string(), username.to_string(), None)?;
     let repo = provider
         .create_repo(config.clone())
         .await

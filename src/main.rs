@@ -175,8 +175,8 @@ enum RemoteCommands {
 
     /// Test remote connection
     Test {
-        /// Remote name to test
-        name: String,
+        /// Remote name to test (omit to test all)
+        name: Option<String>,
     },
 
     /// Update remote credentials
@@ -462,7 +462,11 @@ fn handle_remote_command(action: RemoteCommands) -> Result<()> {
         }
 
         RemoteCommands::Test { name } => {
-            runtime.block_on(remote::test_remote(name))?;
+            if let Some(remote_name) = name {
+                runtime.block_on(remote::test_remote(remote_name))?;
+            } else {
+                runtime.block_on(remote::test_all_remotes())?;
+            }
         }
 
         RemoteCommands::Update { name } => {

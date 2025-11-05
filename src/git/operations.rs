@@ -300,7 +300,8 @@ impl GitOperations {
     /// Compare local branch with remote branch (returns ahead, behind)
     pub fn compare_with_remote(&self, remote_name: &str, branch: &str) -> Result<(usize, usize)> {
         // First fetch to ensure we have latest remote state
-        self.fetch(remote_name, &[branch])?;
+        // Use empty refspecs to fetch all default refs from remote
+        self.fetch(remote_name, &[])?;
 
         // Use existing get_ahead_behind method
         self.get_ahead_behind(branch, remote_name)

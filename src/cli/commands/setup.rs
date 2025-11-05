@@ -5,9 +5,12 @@
 use crate::cli::interactive;
 use crate::core::auth::{AuthBackend, AuthManager};
 use crate::core::config::{Config, RemoteConfig};
+use crate::git::operations::GitOperations;
+use crate::providers::bitbucket::BitbucketProvider;
+use crate::providers::gitea::GiteaProvider;
 use crate::providers::github::GitHubProvider;
 use crate::providers::gitlab::GitLabProvider;
-use crate::providers::traits::Provider;
+use crate::providers::traits::{Protocol, Provider};
 use crate::utils::error::{MultiGitError, Result};
 use dialoguer::{theme::ColorfulTheme, Confirm, MultiSelect, Select};
 use std::sync::Arc;
@@ -125,11 +128,11 @@ pub async fn run_wizard() -> Result<()> {
     println!("   1. Check your configuration:");
     println!("      multigit status\n");
     println!("   2. Test your connections:");
-    println!("      multigit remote test --all\n");
+    println!("      multigit remote test <name>\n");
     println!("   3. Push to all remotes:");
     println!("      multigit push\n");
     println!("   4. Start background sync:");
-    println!("      multigit daemon start --interval 15m\n");
+    println!("      multigit daemon start --interval 15\n");
 
     println!("💡 Need help? Run: multigit --help");
     println!("📖 Full docs: https://github.com/TIVerse/multigit\n");
@@ -201,7 +204,7 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
     // Add to config
     let remote_config = RemoteConfig {
         username: username.clone(),
-        api_url,
+        api_url: api_url.clone(),
         enabled: true,
         provider: Some(provider.to_string()),
         use_ssh: false,
@@ -210,6 +213,35 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
 
     config.add_remote(provider.to_string(), remote_config);
     println!("✅ {} added to configuration", provider);
+
+    // Add the actual git remote to .git/config
+    if let Ok(git_ops) = GitOperations::open(".") {
+        // Determine repository name from current directory
+        let repo_name = std::env::current_dir()
+            .ok()
+            .and_then(|p| p.file_name().map(|n| n.to_string_lossy().to_string()))
+            .unwrap_or_else(|| "repo".to_string());
+
+        // Get the remote URL from provider (re-create provider for URL generation)
+        let test_provider = create_test_provider(provider, &username, &token, api_url.as_deref())?;
+        let remote_url = test_provider.get_remote_url(&repo_name, Protocol::Https);
+
+        // Add git remote
+        match git_ops.add_remote(provider, &remote_url) {
+            Ok(()) => {
+                println!("✅ Git remote added: {} -> {}", provider, remote_url);
+
+                // Optionally fetch to create tracking refs
+                if let Err(e) = git_ops.fetch(provider, &[]) {
+                    println!("⚠️  Initial fetch failed (normal for new repos): {}", e);
+                }
+            }
+            Err(e) => {
+                println!("⚠️  Failed to add git remote: {}", e);
+                println!("   You can manually add it with: git remote add {} {}", provider, remote_url);
+            }
+        }
+    }
 
     Ok(())
 }
@@ -271,7 +303,23 @@ fn create_test_provider(
             let url = api_url.map(std::string::ToString::to_string);
             Arc::new(GitLabProvider::new(token.to_string(), username.to_string(), url)?)
         }
-        _ => return Err(MultiGitError::other(format!("Provider {} not yet supported in wizard", provider))),
+        "bitbucket" => {
+            Arc::new(BitbucketProvider::new(username.to_string(), token.to_string())?)
+        }
+        "gitea" => {
+            let url = api_url.ok_or_else(|| {
+                MultiGitError::config("Gitea requires an API URL".to_string())
+            })?;
+            Arc::new(GiteaProvider::new(token.to_string(), username.to_string(), url.to_string())?)
+        }
+        "codeberg" => {
+            Arc::new(GiteaProvider::new(
+                token.to_string(),
+                username.to_string(),
+                "https://codeberg.org".to_string(),
+            )?)
+        }
+        _ => return Err(MultiGitError::other(format!("Provider {} not supported", provider))),
     };
 
     Ok(provider_instance)

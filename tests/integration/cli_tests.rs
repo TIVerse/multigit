@@ -188,10 +188,14 @@ fn test_is_healthy() {
     repo.commit(Some("HEAD"), &sig, &sig, "Initial", &tree, &[])
         .unwrap();
 
+    // Add a remote so the health check passes (it requires at least one remote)
+    repo.remote("origin", "https://github.com/test/test.git")
+        .unwrap();
+
     use multigit::core::health_checker::HealthChecker;
     let checker = HealthChecker::new(temp_dir.path()).unwrap();
 
-    // Should be healthy for a fresh repo
+    // Should be healthy for a repo with a commit and remote
     let is_healthy = checker.is_healthy();
     assert!(is_healthy);
 }

@@ -53,10 +53,41 @@ pub fn execute(remote: Option<String>, branch: Option<String>) -> Result<()> {
 
     println!("\n📥 Pulling {behind} commit(s)...");
 
-    // For now, we'll advise using git directly for the actual pull
-    // This requires implementing merge/rebase logic
-    println!("\n⚠️  Automatic pull merge not yet implemented.");
-    println!("Please use: git pull {remote_name} {branch_name}");
+    // Attempt fast-forward merge
+    if ahead == 0 {
+        println!("✓ Fast-forward merge possible");
+        println!("\nAttempting fast-forward merge...");
+        
+        // Fast-forward is safe since we have no local commits
+        let local_ref = format!("refs/heads/{branch_name}");
+        let remote_ref = format!("refs/remotes/{remote_name}/{branch_name}");
+        
+        // Get the remote OID
+        let remote_oid = git_ops.inner()
+            .refname_to_id(&remote_ref)
+            .map_err(crate::utils::error::MultiGitError::GitError)?;
+        
+        // Update the local branch to point to remote
+        git_ops.inner()
+            .reference(&local_ref, remote_oid, true, "fast-forward pull")
+            .map_err(crate::utils::error::MultiGitError::GitError)?;
+        
+        // Update working tree if we're on this branch
+        if git_ops.current_branch()? == branch_name {
+            git_ops.inner()
+                .checkout_head(Some(git2::build::CheckoutBuilder::default().force()))
+                .map_err(crate::utils::error::MultiGitError::GitError)?;
+        }
+        
+        println!("✓ Fast-forward merge successful!");
+        println!("\n📊 Pulled {behind} commit(s) from {remote_name}");
+    } else {
+        println!("\n⚠️  Cannot fast-forward (you have {ahead} local commit(s))");
+        println!("\nTo merge, use one of:");
+        println!("  1. Merge: git pull {remote_name} {branch_name}");
+        println!("  2. Rebase: git pull --rebase {remote_name} {branch_name}");
+        println!("  3. Sync all: multigit sync");
+    }
 
     Ok(())
 }

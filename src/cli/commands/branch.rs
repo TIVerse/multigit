@@ -65,22 +65,29 @@ pub mod commands {
         branch_manager.create(&name, None)?;
         println!("✓ Local branch created");
 
+        // Load config to get configured remotes
+        let config = crate::core::config::Config::load().unwrap_or_default();
+
         // Create on remotes via API
         let auth_manager = AuthManager::new(AuthBackend::Keyring, false);
 
         // Try GitHub
-        if let Ok(token) = auth_manager.retrieve_credential("github", "user") {
-            match create_on_github(&token, &name).await {
-                Ok(()) => println!("✓ GitHub: Branch created"),
-                Err(e) => println!("⚠ GitHub: {e}"),
+        if let Some(github_config) = config.remotes.get("github") {
+            if let Ok(token) = auth_manager.retrieve_credential("github", &github_config.username) {
+                match create_on_github(&token, &name).await {
+                    Ok(()) => println!("✓ GitHub: Branch created"),
+                    Err(e) => println!("⚠ GitHub: {e}"),
+                }
             }
         }
 
         // Try GitLab
-        if let Ok(token) = auth_manager.retrieve_credential("gitlab", "user") {
-            match create_on_gitlab(&token, &name).await {
-                Ok(()) => println!("✓ GitLab: Branch created"),
-                Err(e) => println!("⚠ GitLab: {e}"),
+        if let Some(gitlab_config) = config.remotes.get("gitlab") {
+            if let Ok(token) = auth_manager.retrieve_credential("gitlab", &gitlab_config.username) {
+                match create_on_gitlab(&token, &name).await {
+                    Ok(()) => println!("✓ GitLab: Branch created"),
+                    Err(e) => println!("⚠ GitLab: {e}"),
+                }
             }
         }
 
@@ -107,22 +114,29 @@ pub mod commands {
             return Ok(());
         }
 
+        // Load config to get configured remotes
+        let config = crate::core::config::Config::load().unwrap_or_default();
+
         // Delete from remotes first
         let auth_manager = AuthManager::new(AuthBackend::Keyring, false);
 
         // Try GitHub
-        if let Ok(token) = auth_manager.retrieve_credential("github", "user") {
-            match delete_on_github(&token, &name).await {
-                Ok(()) => println!("✓ GitHub: Branch deleted"),
-                Err(e) => println!("⚠ GitHub: {e}"),
+        if let Some(github_config) = config.remotes.get("github") {
+            if let Ok(token) = auth_manager.retrieve_credential("github", &github_config.username) {
+                match delete_on_github(&token, &name).await {
+                    Ok(()) => println!("✓ GitHub: Branch deleted"),
+                    Err(e) => println!("⚠ GitHub: {e}"),
+                }
             }
         }
 
         // Try GitLab
-        if let Ok(token) = auth_manager.retrieve_credential("gitlab", "user") {
-            match delete_on_gitlab(&token, &name).await {
-                Ok(()) => println!("✓ GitLab: Branch deleted"),
-                Err(e) => println!("⚠ GitLab: {e}"),
+        if let Some(gitlab_config) = config.remotes.get("gitlab") {
+            if let Ok(token) = auth_manager.retrieve_credential("gitlab", &gitlab_config.username) {
+                match delete_on_gitlab(&token, &name).await {
+                    Ok(()) => println!("✓ GitLab: Branch deleted"),
+                    Err(e) => println!("⚠ GitLab: {e}"),
+                }
             }
         }
 

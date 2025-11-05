@@ -160,7 +160,8 @@ impl DaemonService {
             use nix::unistd::Pid;
 
             let pid = Pid::from_raw(pid as i32);
-            // Use kill with NULL signal (0) to check if process exists
+            // Use kill with None (signal 0) to check if process exists without sending a signal
+            // Signal 0 is a special case that performs error checking but doesn't send a signal
             match kill(pid, None) {
                 Ok(()) => Ok(true),
                 Err(nix::errno::Errno::ESRCH) => {
@@ -273,9 +274,9 @@ async fn perform_sync() -> std::result::Result<(), Box<dyn std::error::Error + S
     let current_exe = std::env::current_exe()
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
 
-    // Run multigit sync command
+    // Run multigit sync command (no --no-interaction flag needed)
     let output = tokio::process::Command::new(&current_exe)
-        .args(["sync", "--no-interaction"])
+        .args(["sync"])
         .current_dir(".")
         .output()
         .await

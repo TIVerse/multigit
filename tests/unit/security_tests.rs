@@ -39,7 +39,9 @@ fn test_audit_logger_creation() {
 #[test]
 fn test_audit_logger_default_path() {
     let path = AuditLogger::default_path();
-    assert!(path.ends_with("multigit"));
+    // Path should be config_dir/multigit/audit.log
+    assert!(path.ends_with("audit.log"));
+    assert!(path.to_string_lossy().contains("multigit"));
 }
 
 #[test]

@@ -11,7 +11,11 @@ use tracing::info;
 pub async fn execute(remotes: Vec<String>, all: bool) -> Result<()> {
     info!("Executing fetch command");
 
-    let manager = SyncManager::new(".")?;
+    // Load config to get settings
+    let config = Config::load().unwrap_or_default();
+
+    let manager = SyncManager::new(".")?.
+        with_max_parallel(config.settings.max_parallel);
 
     // Determine which remotes to fetch from
     let fetch_remotes = if all {

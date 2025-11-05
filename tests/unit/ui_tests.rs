@@ -115,7 +115,8 @@ fn test_format_duration_hours() {
 #[test]
 fn test_format_bytes_small() {
     let formatted = format_bytes(512);
-    assert_eq!(formatted, "512.00 B");
+    // For bytes < 1024, format as whole number without decimals
+    assert_eq!(formatted, "512 B");
 }
 
 #[test]

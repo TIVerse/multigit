@@ -6,11 +6,12 @@
 use crate::cli::interactive;
 use crate::core::auth::{AuthBackend, AuthManager};
 use crate::core::config::{Config, RemoteConfig};
+use crate::git::operations::GitOperations;
 use crate::providers::bitbucket::BitbucketProvider;
 use crate::providers::gitea::GiteaProvider;
 use crate::providers::github::GitHubProvider;
 use crate::providers::gitlab::GitLabProvider;
-use crate::providers::traits::Provider;
+use crate::providers::traits::{Protocol, Provider};
 use crate::utils::error::{MultiGitError, Result};
 use std::sync::Arc;
 use tracing::{info, warn};
@@ -109,6 +110,48 @@ pub async fn add_remote(
     config.remotes.insert(provider_lower.clone(), remote_config);
     config.save()?;
 
+    // Add the actual git remote to .git/config
+    if let Ok(git_ops) = GitOperations::open(".") {
+        // Determine repository name from current directory or remote repo
+        let repo_name = std::env::current_dir()
+            .ok()
+            .and_then(|p| p.file_name().map(|n| n.to_string_lossy().to_string()))
+            .unwrap_or_else(|| "repo".to_string());
+
+        // Get the remote URL from provider
+        let remote_url = provider.get_remote_url(&repo_name, Protocol::Https);
+
+        // Add git remote
+        match git_ops.add_remote(&provider_lower, &remote_url) {
+            Ok(()) => {
+                interactive::print_success(&format!(
+                    "Added git remote '{provider_lower}' -> {remote_url}"
+                ));
+
+                // Optionally fetch to create tracking refs
+                interactive::print_info("Fetching from remote...");
+                if let Err(e) = git_ops.fetch(&provider_lower, &[]) {
+                    interactive::print_warning(&format!(
+                        "Initial fetch failed (this is normal for new/empty repos): {e}"
+                    ));
+                }
+            }
+            Err(e) => {
+                interactive::print_warning(&format!(
+                    "Failed to add git remote (config saved, but git remote not added): {e}"
+                ));
+                interactive::print_info(&format!(
+                    "You can manually add it with: git remote add {provider_lower} {remote_url}"
+                ));
+            }
+        }
+    } else {
+        interactive::print_warning(
+            "Not in a git repository. Remote added to config, but git remote not created.",
+        );
+        interactive::print_info("Run this command from within a git repository to add git remotes.");
+    }
+
     interactive::print_success(&format!(
         "Remote '{provider_lower}' added successfully for user {username}"
     ));
@@ -187,6 +230,17 @@ pub fn remove_remote(name: String, force: bool) -> Result<()> {
     let remote_config = config.remotes.remove(&name_lower)
         .expect("Remote should exist - we checked with contains_key");
     config.save()?;
+
+    // Remove the git remote from .git/config
+    if let Ok(git_ops) = GitOperations::open(".") {
+        if let Err(e) = git_ops.remove_remote(&name_lower) {
+            interactive::print_warning(&format!(
+                "Failed to remove git remote (config updated): {e}"
+            ));
+        } else {
+            interactive::print_success(&format!("Removed git remote '{name_lower}'"));
+        }
+    }
 
     // Remove credentials
     let auth_manager = AuthManager::new(AuthBackend::Keyring, config.security.audit_log);
