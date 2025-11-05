@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-06
+
+### Added
+- **Unified Provider Factory** (`src/providers/factory.rs`) - Centralized provider creation logic
+  - Eliminates code duplication between `setup.rs` and `remote.rs`
+  - Single source of truth for supported providers
+  - Helper functions: `create_provider()`, `is_supported_provider()`, `supported_providers()`
+- **Remote Health Checks** - Actual connectivity testing in `multigit doctor`
+  - Tests each remote with `git ls-remote` equivalent
+  - 10-second timeout for health checks
+  - Categorized error messages (authentication, network, timeout)
+  - Provides actionable troubleshooting information
+
+### Fixed
+- **CLI Flag Handling** - Fixed ignored and missing command-line arguments
+  - `multigit sync --dry-run` and `--branch` now work correctly
+  - `multigit push --remotes <list>` now filters remotes as expected
+  - Commands properly receive all CLI parameters
+- **Network Error Retryability** - Fixed `MultiGitError::network()` helper
+  - Added `NetworkMessage` variant for custom network errors
+  - Network errors are now properly marked as retryable
+  - Consistent error handling across the codebase
+- **Fetch Metrics Accuracy** - Fixed commit counting in fetch operations
+  - Changed from comparing HEAD (never changes) to comparing remote refs
+  - Accurately reports number of updated refs after fetch
+  - Better visibility into sync operations
+- **Push Timeout Monitoring** - Enhanced timeout handling during push
+  - Added `pack_progress` callback for pack generation phase
+  - Improved timeout detection and logging
+  - Better error messages when timeouts occur
+
+### Changed
+- **Configuration Documentation** - Enhanced config scope documentation
+  - Clarified that `Config::save()` saves to user config (global) by default
+  - Documented when to use `save_repo_config()` for repository-specific settings
+  - Explained hierarchical config loading order (defaults → user → repo)
+- **Provider Creation** - Refactored to use shared factory
+  - `setup.rs` and `remote.rs` now use `providers::factory::create_provider()`
+  - Reduced code duplication by ~80 lines
+  - Easier to add new providers
+
+### Deprecated
+- **Alternative CLI Parser** (`src/cli/parser.rs`) - Marked as unused
+  - Added prominent documentation warning contributors
+  - Preserved for historical reference
+  - Active CLI definition is in `src/main.rs`
+
 ## [1.1.0] - 2025-10-31
 
 ### Added
