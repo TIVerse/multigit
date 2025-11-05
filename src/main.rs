@@ -46,6 +46,9 @@ enum Commands {
         username: Option<String>,
     },
 
+    /// Interactive staging - visually select files to stage
+    Add,
+
     /// Create repository on all configured platforms
     Create {
         /// Repository name
@@ -154,6 +157,107 @@ enum Commands {
     /// Interactive conventional commit helper
     #[command(name = "cc", alias = "commit")]
     Cc,
+
+    /// Interactive commit history browser
+    Log {
+        /// Number of commits to show
+        #[arg(short, long)]
+        limit: Option<usize>,
+
+        /// Show commits from specific branch
+        #[arg(short, long)]
+        branch: Option<String>,
+
+        /// Filter by author
+        #[arg(short, long)]
+        author: Option<String>,
+
+        /// Show graph view
+        #[arg(short, long)]
+        graph: bool,
+    },
+
+    /// Interactive branch switcher
+    Switch {
+        /// Branch name to switch to
+        branch: Option<String>,
+
+        /// Create new branch
+        #[arg(short, long)]
+        create: bool,
+
+        /// Base branch for new branch
+        #[arg(short = 'f', long)]
+        from: Option<String>,
+    },
+
+    /// Interactive stash manager
+    Stash,
+
+    /// Undo operations (commits, changes, staging)
+    Undo,
+
+    /// Amend last commit
+    Amend {
+        /// Amend without editing message
+        #[arg(long)]
+        no_edit: bool,
+    },
+
+    /// Generate changelog from conventional commits
+    Changelog {
+        /// Generate since this tag/commit
+        #[arg(short, long)]
+        since: Option<String>,
+
+        /// Output file
+        #[arg(short, long)]
+        output: Option<String>,
+    },
+
+    /// Repository statistics
+    Stats,
+
+    /// Smart merge from remotes
+    Merge {
+        /// Remote to merge from
+        #[arg(short, long)]
+        from: Option<String>,
+
+        /// Branch to merge
+        #[arg(short, long)]
+        branch: Option<String>,
+    },
+
+    /// Backup to all remotes
+    Backup {
+        /// Automatic mode (no prompts)
+        #[arg(short, long)]
+        auto: bool,
+    },
+
+    /// Mirror mode - sync all remotes perfectly
+    Mirror {
+        /// Force push
+        #[arg(short, long)]
+        force: bool,
+
+        /// Dry run
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// Work session tracker
+    Session,
+
+    /// Commit message templates
+    Template,
+
+    /// Git hooks manager
+    Hooks,
+
+    /// Git aliases manager
+    Alias,
 
     /// Show version information
     Version,
@@ -331,6 +435,11 @@ fn main() -> Result<()> {
             }
         }
 
+        Commands::Add => {
+            use multigit::cli::commands::add;
+            add::execute()?;
+        }
+
         Commands::Create {
             name,
             description,
@@ -416,6 +525,84 @@ fn main() -> Result<()> {
         Commands::Cc => {
             use multigit::cli::commands::conventional_commit;
             conventional_commit::execute()?;
+        }
+
+        Commands::Log { limit, branch, author, graph } => {
+            use multigit::cli::commands::log;
+            if graph {
+                log::show_graph(limit)?;
+            } else {
+                log::execute(limit, branch, author)?;
+            }
+        }
+
+        Commands::Switch { branch, create, from } => {
+            use multigit::cli::commands::switch;
+            if create {
+                switch::create_and_switch(from)?;
+            } else {
+                switch::execute(branch)?;
+            }
+        }
+
+        Commands::Stash => {
+            use multigit::cli::commands::stash;
+            stash::execute()?;
+        }
+
+        Commands::Undo => {
+            use multigit::cli::commands::undo;
+            undo::execute()?;
+        }
+
+        Commands::Amend { no_edit } => {
+            use multigit::cli::commands::amend;
+            amend::execute(no_edit)?;
+        }
+
+        Commands::Changelog { since, output } => {
+            use multigit::cli::commands::changelog;
+            changelog::execute(since, output)?;
+        }
+
+        Commands::Stats => {
+            use multigit::cli::commands::stats;
+            stats::execute()?;
+        }
+
+        Commands::Merge { from, branch } => {
+            use multigit::cli::commands::merge;
+            merge::execute(from, branch)?;
+        }
+
+        Commands::Backup { auto } => {
+            use multigit::cli::commands::backup;
+            backup::execute(auto)?;
+        }
+
+        Commands::Mirror { force, dry_run } => {
+            use multigit::cli::commands::mirror;
+            mirror::execute(force, dry_run)?;
+        }
+
+        Commands::Session => {
+            use multigit::cli::commands::session;
+            session::execute()?;
+        }
+
+        Commands::Template => {
+            use multigit::cli::commands::template;
+            template::execute()?;
+        }
+
+        Commands::Hooks => {
+            use multigit::cli::commands::hooks;
+            hooks::execute()?;
+        }
+
+        Commands::Alias => {
+            use multigit::cli::commands::alias;
+            alias::execute()?;
         }
 
         Commands::Conflict { action } => {

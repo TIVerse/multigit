@@ -1,6 +1,11 @@
 //! Command implementations
 
+pub mod add;
+pub mod alias;
+pub mod amend;
+pub mod backup;
 pub mod branch;
+pub mod changelog;
 pub mod clone;
 pub mod conflict;
 pub mod conventional_commit;
@@ -8,13 +13,21 @@ pub mod create;
 pub mod daemon;
 pub mod doctor;
 pub mod fetch;
+pub mod hooks;
 pub mod init;
+pub mod log;
+pub mod merge;
+pub mod mirror;
 pub mod pull;
 pub mod push;
 pub mod remote;
+pub mod session;
 pub mod setup;
+pub mod stash;
+pub mod stats;
 pub mod status;
+pub mod switch;
 pub mod sync;
 pub mod tag;
-
-// TODO: Implement remaining commands (workspace, backup, etc.)
+pub mod template;
+pub mod undo;
