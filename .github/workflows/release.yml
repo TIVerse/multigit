@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*.*.*'
 
+# Cancel in-progress runs when a new workflow starts
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -50,10 +55,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@9cd00a88a73addc8617065438eff914dd08d0955 # stable
         with:
           targets: ${{ matrix.target }}
       
@@ -145,7 +150,7 @@ jobs:
           "ASSET_NAME=$pkgName.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
       
       - name: Upload release package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
         with:
           name: ${{ matrix.os-name }}-${{ matrix.arch }}-package
           path: ${{ env.ASSET_NAME }}
@@ -156,10 +161,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
         with:
           path: artifacts
           pattern: '*-package'
@@ -172,7 +177,7 @@ jobs:
           cat SHA256SUMS
       
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564 # v2.0.4
         with:
           files: |
             artifacts/*

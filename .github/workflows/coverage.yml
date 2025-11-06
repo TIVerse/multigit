@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [ master, main ]
 
+# Restrict permissions to minimum required
+permissions:
+  contents: read
+
+# Cancel in-progress runs when a new workflow starts
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -16,21 +25,21 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@9cd00a88a73addc8617065438eff914dd08d0955 # stable
         with:
           components: llvm-tools-preview
       
       - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
+        uses: taiki-e/install-action@56ab7930c591507f833cbaebf1e7db9c9f3d4e23 # cargo-llvm-cov
       
       - name: Generate coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
       
       - name: Upload to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v5.0.2
         with:
           files: lcov.info
           fail_ci_if_error: true
@@ -39,7 +48,7 @@ jobs:
         run: cargo llvm-cov --all-features --workspace --html
       
       - name: Upload HTML report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
         with:
           name: coverage-report
           path: target/llvm-cov/html/
