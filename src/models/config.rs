@@ -150,6 +150,14 @@ pub struct SecurityConfig {
     /// Enable SSH agent forwarding
     #[serde(default = "default_true")]
     pub ssh_agent: bool,
+
+    /// Allow insecure HTTP URLs (default: false, only HTTPS allowed)
+    #[serde(default)]
+    pub allow_insecure_http: bool,
+
+    /// Allow reading tokens from environment variables (default: false for security)
+    #[serde(default)]
+    pub allow_env_tokens: bool,
 }
 
 impl Default for SecurityConfig {
@@ -159,6 +167,8 @@ impl Default for SecurityConfig {
             audit_log: false,
             encryption_key_path: None,
             ssh_agent: true,
+            allow_insecure_http: false,
+            allow_env_tokens: false,
         }
     }
 }
