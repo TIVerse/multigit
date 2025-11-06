@@ -10,35 +10,40 @@ env:
 
 jobs:
   build-release:
-    name: Build Release Binary for ${{ matrix.target }}
+    name: Build Release for ${{ matrix.os-name }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
+            os-name: linux
             target: x86_64-unknown-linux-gnu
-            binary_name: multigit
-            asset_name: multigit-linux-x86_64
-          
+            arch: x86_64
+            ext: ""
+            
           - os: ubuntu-latest
+            os-name: linux
             target: x86_64-unknown-linux-musl
-            binary_name: multigit
-            asset_name: multigit-linux-x86_64-musl
+            arch: x86_64-musl
+            ext: ""
           
           - os: macos-latest
+            os-name: macos
             target: x86_64-apple-darwin
-            binary_name: multigit
-            asset_name: multigit-macos-x86_64
+            arch: x86_64
+            ext: ""
           
           - os: macos-latest
+            os-name: macos
             target: aarch64-apple-darwin
-            binary_name: multigit
-            asset_name: multigit-macos-aarch64
+            arch: arm64
+            ext: ""
           
           - os: windows-latest
+            os-name: windows
             target: x86_64-pc-windows-msvc
-            binary_name: multigit.exe
-            asset_name: multigit-windows-x86_64.exe
+            arch: x86_64
+            ext: ".exe"
     
     steps:
       - name: Checkout code
@@ -53,23 +58,99 @@ jobs:
         if: matrix.target == 'x86_64-unknown-linux-musl'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
       
-      - name: Build release binary
+      - name: Build release binaries
         run: cargo build --release --target ${{ matrix.target }}
       
-      - name: Strip binary (Unix)
+      - name: Strip binaries (Unix)
         if: matrix.os != 'windows-latest'
-        run: strip target/${{ matrix.target }}/release/${{ matrix.binary_name }}
+        run: |
+          strip target/${{ matrix.target }}/release/multigit${{ matrix.ext }}
+          strip target/${{ matrix.target }}/release/mg${{ matrix.ext }}
       
-      - name: Rename binary
+      - name: Get version
+        id: version
         shell: bash
         run: |
-          cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} ${{ matrix.asset_name }}
+          VERSION=$(grep '^version' Cargo.toml | head -1 | cut -d'"' -f2)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
       
-      - name: Upload binary artifact
+      - name: Create release package (Unix)
+        if: matrix.os != 'windows-latest'
+        shell: bash
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          PKG_NAME="multigit-${VERSION}-${{ matrix.os-name }}-${{ matrix.arch }}"
+          
+          mkdir -p "${PKG_NAME}"
+          cp target/${{ matrix.target }}/release/multigit "${PKG_NAME}/"
+          cp target/${{ matrix.target }}/release/mg "${PKG_NAME}/"
+          cp README.md "${PKG_NAME}/"
+          cp LICENSE "${PKG_NAME}/" || echo "MIT License" > "${PKG_NAME}/LICENSE"
+          cp CHANGELOG.md "${PKG_NAME}/" || true
+          
+          # Create install script
+          cat > "${PKG_NAME}/install.sh" << 'INSTALL_SCRIPT'
+          #!/bin/bash
+          set -e
+          echo "Installing MultiGit..."
+          if [ -w "/usr/local/bin" ]; then
+              INSTALL_DIR="/usr/local/bin"
+          elif [ -w "$HOME/.local/bin" ]; then
+              INSTALL_DIR="$HOME/.local/bin"
+              mkdir -p "$INSTALL_DIR"
+          else
+              echo "Error: No writable install directory found"
+              echo "Try running: sudo ./install.sh"
+              exit 1
+          fi
+          install -m755 multigit "$INSTALL_DIR/multigit"
+          install -m755 mg "$INSTALL_DIR/mg"
+          echo "✅ Installed to $INSTALL_DIR"
+          echo "Run: multigit --version"
+          INSTALL_SCRIPT
+          chmod +x "${PKG_NAME}/install.sh"
+          
+          # Create archive
+          tar -czf "${PKG_NAME}.tar.gz" "${PKG_NAME}"
+          echo "ASSET_NAME=${PKG_NAME}.tar.gz" >> $GITHUB_ENV
+          
+      - name: Create release package (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          PKG_NAME="multigit-${VERSION}-${{ matrix.os-name }}-${{ matrix.arch }}"
+          
+          mkdir -p "${PKG_NAME}"
+          cp target/${{ matrix.target }}/release/multigit.exe "${PKG_NAME}/"
+          cp target/${{ matrix.target }}/release/mg.exe "${PKG_NAME}/"
+          cp README.md "${PKG_NAME}/"
+          cp LICENSE "${PKG_NAME}/" || echo "MIT License" > "${PKG_NAME}/LICENSE"
+          cp CHANGELOG.md "${PKG_NAME}/" || true
+          
+          # Create install script
+          cat > "${PKG_NAME}/install.bat" << 'INSTALL_BATCH'
+          @echo off
+          echo Installing MultiGit...
+          set INSTALL_DIR=%USERPROFILE%\.cargo\bin
+          if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
+          copy /Y multigit.exe "%INSTALL_DIR%\multigit.exe"
+          copy /Y mg.exe "%INSTALL_DIR%\mg.exe"
+          echo.
+          echo ✅ Installed to %INSTALL_DIR%
+          echo Run: multigit --version
+          pause
+          INSTALL_BATCH
+          
+          # Create zip archive
+          7z a -tzip "${PKG_NAME}.zip" "${PKG_NAME}"
+          echo "ASSET_NAME=${PKG_NAME}.zip" >> $GITHUB_ENV
+      
+      - name: Upload release package
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.asset_name }}
-          path: ${{ matrix.asset_name }}
+          name: release-packages
+          path: ${{ env.ASSET_NAME }}
   
   create-release:
     name: Create GitHub Release
@@ -82,14 +163,61 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v3
         with:
+          name: release-packages
           path: artifacts
+      
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
       
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/**/*
+          files: |
+            artifacts/*
           draft: false
           prerelease: false
           generate_release_notes: true
+          body: |
+            ## 🎉 MultiGit Release ${{ github.ref_name }}
+            
+            ### 📦 Download
+            
+            Choose the package for your platform:
+            
+            - **Linux x86_64 (GNU)**: `multigit-*-linux-x86_64.tar.gz`
+            - **Linux x86_64 (MUSL - static)**: `multigit-*-linux-x86_64-musl.tar.gz`
+            - **macOS Intel**: `multigit-*-macos-x86_64.tar.gz`
+            - **macOS Apple Silicon**: `multigit-*-macos-arm64.tar.gz`
+            - **Windows x86_64**: `multigit-*-windows-x86_64.zip`
+            
+            ### 🚀 Quick Install
+            
+            **Linux/macOS:**
+            ```bash
+            tar -xzf multigit-*.tar.gz
+            cd multigit-*
+            ./install.sh
+            ```
+            
+            **Windows:**
+            1. Extract the ZIP file
+            2. Run `install.bat`
+            
+            ### ✅ Verify Installation
+            ```bash
+            multigit --version
+            mg --version
+            ```
+            
+            ### 📋 What's Changed
+            
+            See [CHANGELOG.md](https://github.com/TIVerse/multigit/blob/main/CHANGELOG.md) for details.
+            
+            ### 🔐 Checksums
+            
+            See `SHA256SUMS` file for verification.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
