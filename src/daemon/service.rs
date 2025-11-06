@@ -6,6 +6,7 @@
 use crate::core::config::Config;
 use crate::daemon::scheduler::Scheduler;
 use crate::utils::error::{MultiGitError, Result};
+use crate::utils::redact::redact;
 use std::fs;
 use std::path::PathBuf;
 use std::process;
@@ -284,17 +285,19 @@ async fn perform_sync() -> std::result::Result<(), Box<dyn std::error::Error + S
 
     if output.status.success() {
         info!("[Daemon] Sync completed successfully");
-        // Log stdout if available
+        // Log stdout if available (with secret redaction)
         if !output.stdout.is_empty() {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            debug!("[Daemon] Sync output: {}", stdout);
+            let redacted_stdout = redact(&stdout);
+            debug!("[Daemon] Sync output: {}", redacted_stdout);
         }
     } else {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        warn!("[Daemon] Sync failed: {}", stderr);
+        let redacted_stderr = redact(&stderr);
+        warn!("[Daemon] Sync failed: {}", redacted_stderr);
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::Other,
-            format!("Sync command failed: {stderr}"),
+            format!("Sync command failed: {}", redacted_stderr),
         )) as Box<dyn std::error::Error + Send + Sync>);
     }
 
