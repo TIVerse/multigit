@@ -5,9 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - 2025-11-06
+## [2.0.0] - 2025-11-07
 
-### Added
+### 🔒 Security (Major Update)
+
+#### Added
+- **Host-Bound Credentials** - Credentials now scoped to specific hosts
+  - Prevents confused-deputy attacks where malicious self-hosted instances could steal tokens
+  - Credential key format: `{provider}:{host}:{username}:token`
+  - Automatic transparent migration from legacy `{provider}:{username}:token` format
+  - Supports both SaaS (github.com, gitlab.com) and self-hosted instances
+- **HTTPS Enforcement** - HTTP URLs rejected by default for self-hosted providers
+  - Protects against man-in-the-middle attacks
+  - New `validate_https_url()` function with URL normalization
+  - Opt-in bypass via `security.allow_insecure_http = true` config flag
+  - Clear error messages when HTTP URLs are rejected
+- **Environment Token Opt-In** - Environment variables no longer read by default
+  - `MULTIGIT_{PROVIDER}_TOKEN` requires explicit `security.allow_env_tokens = true`
+  - Reduces attack surface for credential exposure
+  - Logs warning when environment tokens are used (without exposing values)
+- **Secret Redaction Module** (`src/utils/redact.rs`) - Comprehensive log sanitization
+  - Automatically masks GitHub tokens (ghp_, gho_, ghs_, github_pat_)
+  - Redacts GitLab tokens (glpat-), Bearer tokens, JWTs, AWS keys
+  - Sanitizes URL-embedded credentials (user:pass@host)
+  - Masks key-value pairs (token=, password=, api_key=, etc.)
+  - Applied to all daemon sync output logging
+- **Security CI Pipeline** (`.github/workflows/security.yml`)
+  - Dependency vulnerability scanning with `cargo audit`
+  - License and advisory checks with `cargo-deny`
+  - Secret detection with `gitleaks`
+  - Security-focused Clippy lints
+  - Runs on push, PR, and daily schedule
+- **GitHub Actions Pinning** - All actions pinned to commit SHAs
+  - Prevents supply chain attacks via tag poisoning
+  - Added version comments for maintainability
+  - Least-privilege `permissions:` blocks in all workflows
+  - Concurrency groups to prevent duplicate runs
+- **Dependabot Configuration** - Automated dependency updates
+  - Weekly updates for GitHub Actions and Cargo dependencies
+  - Grouped minor/patch updates for efficiency
+  - Proper labels and commit message prefixes
+- **Pre-Commit Hooks** (`.pre-commit-config.yaml`)
+  - Local development hygiene automation
+  - Format checking with rustfmt
+  - Linting with clippy (advisory mode)
+  - Secret scanning with gitleaks
+  - YAML and Markdown validation
+- **Cargo.lock Committed** - Reproducible builds for binary application
+  - Ensures consistent dependency versions in CI and releases
+  - Follows Rust best practices for applications
+
+#### Changed
+- **BREAKING**: `AuthManager` credential methods now require `host` parameter and `allow_env` flag
+  - `store_credential(provider, host, username, token)`
+  - `retrieve_credential(provider, host, username, allow_env)`
+  - `delete_credential(provider, host, username)`
+- **BREAKING**: `create_provider()` now requires `allow_insecure` parameter
+- **SecurityConfig** extended with new flags:
+  - `allow_insecure_http: bool` (default: false)
+  - `allow_env_tokens: bool` (default: false)
+
+### Features
+
+#### Added
 - **Conventional Commit Helper** (`mg cc` / `multigit cc`) - Interactive tool for creating conventional commits
   - Select files to stage with "All files" or "Select individually" options
   - Choose commit type (feat, fix, docs, style, refactor, perf, test, build, ci, chore)
@@ -25,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Eliminates code duplication between `setup.rs` and `remote.rs`
   - Single source of truth for supported providers
   - Helper functions: `create_provider()`, `is_supported_provider()`, `supported_providers()`
+  - New `get_provider_host()` for consistent host resolution
 - **Remote Health Checks** - Actual connectivity testing in `multigit doctor`
   - Tests each remote with `git ls-remote` equivalent
   - 10-second timeout for health checks
