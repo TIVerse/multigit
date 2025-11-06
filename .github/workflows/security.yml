@@ -56,7 +56,9 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       
       - name: Install cargo-deny
-        uses: taiki-e/install-action@56ab7930c591507f833cbaebf1e7db9c9f3d4e23 # cargo-deny
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
       
       - name: Run cargo deny
         run: cargo deny check advisories licenses sources
@@ -71,7 +73,7 @@ jobs:
           fetch-depth: 0  # Fetch all history for gitleaks
       
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@cb7149a9idfc50d73c6d9f1494e61a5d1e1e3dd1 # v2.3.3
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: false
