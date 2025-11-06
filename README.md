@@ -64,9 +64,12 @@
 
 ### 🔒 Security & Privacy
 - 🔐 **OS Keyring Integration** - Native credential managers
+- 🌐 **Host-Bound Credentials** - Tokens scoped to specific hosts
+- 🔒 **HTTPS Enforcement** - Prevents insecure HTTP connections
 - 🔑 **Age Encryption** - Encrypted credential fallback
 - 🚫 **Zero Plain Text** - No passwords or tokens in files
 - 📝 **Audit Logging** - Track all sensitive operations
+- 🛡️ **Secret Redaction** - Automatic log sanitization
 - 🔒 **TLS/SSL** - Encrypted network communication
 
 </td>
@@ -754,10 +757,25 @@ mg config reset
 
 ### 🛡️ Security Features
 
+- **Host-Bound Credentials** 🌐
+  - Credentials scoped to specific hosts
+  - Prevents confused-deputy attacks
+  - Automatic migration from legacy keys
+
+- **HTTPS Enforcement** 🔒
+  - HTTP URLs rejected by default
+  - Opt-in for insecure connections
+  - Protects against MitM attacks
+
 - **Zero Plain Text** 🚫
   - No tokens in config files
-  - No passwords in environment variables
+  - Environment tokens opt-in only
   - Memory wiping after use
+
+- **Secret Redaction** 🛡️
+  - Automatic log sanitization
+  - Masks tokens, passwords, keys
+  - Safe daemon output logging
 
 - **Audit Logging** 📝
   - Track all sensitive operations
