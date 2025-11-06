@@ -103,6 +103,40 @@ pub fn validate_url(url_str: &str) -> Result<()> {
     Ok(())
 }
 
+/// Validate that a URL uses HTTPS (reject HTTP for security)
+pub fn validate_https_url(url_str: &str, allow_insecure: bool) -> Result<String> {
+    let parsed_url = url::Url::parse(url_str)
+        .map_err(|e| MultiGitError::invalid_input(format!("Invalid URL: {e}")))?;
+
+    if parsed_url.scheme() == "http" && !allow_insecure {
+        return Err(MultiGitError::invalid_input(
+            "HTTP URLs are not allowed for security reasons. Please use HTTPS.\n\
+             If you really need to use HTTP (not recommended), set 'security.allow_insecure_http = true' in your config."
+        ));
+    }
+
+    if parsed_url.scheme() != "http" && parsed_url.scheme() != "https" {
+        return Err(MultiGitError::invalid_input(format!(
+            "Unsupported URL scheme '{}'. Only HTTP(S) URLs are supported.",
+            parsed_url.scheme()
+        )));
+    }
+
+    // Return normalized URL (with trailing slashes removed)
+    Ok(url_str.trim_end_matches('/').to_string())
+}
+
+/// Extract host from URL for credential binding
+pub fn extract_host_from_url(url_str: &str) -> Result<String> {
+    let parsed_url = url::Url::parse(url_str)
+        .map_err(|e| MultiGitError::invalid_input(format!("Invalid URL: {e}")))?;
+
+    parsed_url
+        .host_str()
+        .map(ToString::to_string)
+        .ok_or_else(|| MultiGitError::invalid_input("URL does not contain a valid host"))
+}
+
 /// Validate an API token (basic checks)
 pub fn validate_token(token: &str) -> Result<()> {
     if token.is_empty() {
@@ -207,5 +241,40 @@ mod tests {
             "ghp_...mnop"
         );
         assert_eq!(sanitize_token("short"), "*****");
+    }
+
+    #[test]
+    fn test_validate_https_url() {
+        // HTTPS should always be allowed
+        assert!(validate_https_url("https://github.com", false).is_ok());
+        assert!(validate_https_url("https://git.example.com/api/v1", false).is_ok());
+
+        // HTTP should be rejected when allow_insecure is false
+        assert!(validate_https_url("http://example.com", false).is_err());
+        
+        // HTTP should be allowed when allow_insecure is true
+        assert!(validate_https_url("http://example.com", true).is_ok());
+
+        // Other schemes should be rejected
+        assert!(validate_https_url("ftp://example.com", false).is_err());
+        assert!(validate_https_url("git://example.com", false).is_err());
+    }
+
+    #[test]
+    fn test_extract_host_from_url() {
+        assert_eq!(
+            extract_host_from_url("https://github.com").unwrap(),
+            "github.com"
+        );
+        assert_eq!(
+            extract_host_from_url("https://git.example.com:8080/api").unwrap(),
+            "git.example.com"
+        );
+        assert_eq!(
+            extract_host_from_url("https://192.168.1.1/gitlab").unwrap(),
+            "192.168.1.1"
+        );
+        
+        assert!(extract_host_from_url("not-a-url").is_err());
     }
 }
