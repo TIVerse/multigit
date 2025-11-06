@@ -8,6 +8,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+permissions:
+  contents: write
+
 jobs:
   build-release:
     name: Build Release for ${{ matrix.os-name }}
@@ -116,20 +119,17 @@ jobs:
           
       - name: Create release package (Windows)
         if: matrix.os == 'windows-latest'
-        shell: bash
+        shell: pwsh
         run: |
-          VERSION=${{ steps.version.outputs.VERSION }}
-          PKG_NAME="multigit-${VERSION}-${{ matrix.os-name }}-${{ matrix.arch }}"
-          
-          mkdir -p "${PKG_NAME}"
-          cp target/${{ matrix.target }}/release/multigit.exe "${PKG_NAME}/"
-          cp target/${{ matrix.target }}/release/mg.exe "${PKG_NAME}/"
-          cp README.md "${PKG_NAME}/"
-          cp LICENSE "${PKG_NAME}/" || echo "MIT License" > "${PKG_NAME}/LICENSE"
-          cp CHANGELOG.md "${PKG_NAME}/" || true
-          
-          # Create install script
-          cat > "${PKG_NAME}/install.bat" << 'INSTALL_BATCH'
+          $VERSION = "${{ steps.version.outputs.VERSION }}"
+          $pkgName = "multigit-$VERSION-${{ matrix.os-name }}-${{ matrix.arch }}"
+          New-Item -ItemType Directory -Path $pkgName -Force | Out-Null
+          Copy-Item "target\${{ matrix.target }}\release\multigit.exe" "$pkgName\multigit.exe" -Force
+          Copy-Item "target\${{ matrix.target }}\release\mg.exe" "$pkgName\mg.exe" -Force
+          Copy-Item "README.md" "$pkgName\README.md" -Force
+          if (Test-Path "LICENSE") { Copy-Item "LICENSE" "$pkgName\LICENSE" -Force } else { Set-Content -Path "$pkgName\LICENSE" -Value "MIT License" }
+          if (Test-Path "CHANGELOG.md") { Copy-Item "CHANGELOG.md" "$pkgName\CHANGELOG.md" -Force }
+          Set-Content -Path "$pkgName\install.bat" -Value @"
           @echo off
           echo Installing MultiGit...
           set INSTALL_DIR=%USERPROFILE%\.cargo\bin
@@ -137,14 +137,12 @@ jobs:
           copy /Y multigit.exe "%INSTALL_DIR%\multigit.exe"
           copy /Y mg.exe "%INSTALL_DIR%\mg.exe"
           echo.
-          echo ✅ Installed to %INSTALL_DIR%
+          echo Installed to %INSTALL_DIR%
           echo Run: multigit --version
           pause
-          INSTALL_BATCH
-          
-          # Create zip archive
-          7z a -tzip "${PKG_NAME}.zip" "${PKG_NAME}"
-          echo "ASSET_NAME=${PKG_NAME}.zip" >> $GITHUB_ENV
+          "@
+          Compress-Archive -Path "$pkgName\*" -DestinationPath "$pkgName.zip" -Force
+          "ASSET_NAME=$pkgName.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
       
       - name: Upload release package
         uses: actions/upload-artifact@v4
