@@ -60,19 +60,47 @@ release: ## Build optimized release binary
 	@echo "   $(TARGET_DIR)/release/$(BINARY_NAME)$(EXT)"
 	@echo "   $(TARGET_DIR)/release/$(BINARY_ALIAS)$(EXT)"
 
-build-all-targets: ## Build for all platforms
+build-all-targets: ## Build for all platforms (requires cross-compilation tools)
 	@echo "🌍 Building for all platforms..."
+	@echo "⚠️  Note: Cross-compilation requires additional tools and linkers"
+	@echo ""
+	@echo "Building Linux x86_64 (GNU)..."
+	@$(CARGO) build --release --target x86_64-unknown-linux-gnu || true
+	@echo ""
+	@echo "Building Linux x86_64 (MUSL - static)..."
+	@echo "Note: Requires musl-tools: sudo apt install musl-tools"
+	@$(CARGO) build --release --target x86_64-unknown-linux-musl || echo "⚠️  MUSL build failed (install musl-tools or skip)"
+	@echo ""
+	@echo "Building macOS x86_64..."
+	@echo "Note: Requires macOS SDK and linker (osxcross on Linux)"
+	@$(CARGO) build --release --target x86_64-apple-darwin || echo "⚠️  macOS x86_64 build skipped (requires macOS or osxcross)"
+	@echo ""
+	@echo "Building macOS ARM64 (Apple Silicon)..."
+	@$(CARGO) build --release --target aarch64-apple-darwin || echo "⚠️  macOS ARM64 build skipped (requires macOS or osxcross)"
+	@echo ""
+	@echo "Building Windows x86_64..."
+	@echo "Note: Requires MinGW-w64 toolchain"
+	@$(CARGO) build --release --target x86_64-pc-windows-msvc || echo "⚠️  Windows build skipped (requires MinGW or Wine)"
+	@echo ""
+	@echo "✅ Multi-platform build completed (some targets may have been skipped)"
+
+build-current: ## Build for current platform only
+	@echo "🔨 Building for current platform..."
+	@$(CARGO) build --release
+
+build-linux: ## Build Linux targets (GNU and MUSL)
+	@echo "🐧 Building Linux targets..."
 	@echo "Building Linux x86_64 (GNU)..."
 	@$(CARGO) build --release --target x86_64-unknown-linux-gnu
-	@echo "Building Linux x86_64 (MUSL - static)..."
+	@echo "Building Linux x86_64 (MUSL - requires musl-tools)..."
+	@$(CARGO) build --release --target x86_64-unknown-linux-musl || echo "⚠️  Install musl-tools: sudo apt install musl-tools"
+
+build-linux-musl: ## Build static Linux binary with MUSL
+	@echo "🐧 Building static Linux binary (MUSL)..."
+	@echo "Checking for musl-tools..."
+	@which musl-gcc > /dev/null 2>&1 || (echo "❌ musl-tools not found. Install with: sudo apt install musl-tools" && exit 1)
 	@$(CARGO) build --release --target x86_64-unknown-linux-musl
-	@echo "Building macOS x86_64..."
-	@$(CARGO) build --release --target x86_64-apple-darwin
-	@echo "Building macOS ARM64 (Apple Silicon)..."
-	@$(CARGO) build --release --target aarch64-apple-darwin
-	@echo "Building Windows x86_64..."
-	@$(CARGO) build --release --target x86_64-pc-windows-msvc
-	@echo "✅ All platform builds completed!"
+	@echo "✅ Static binary: target/x86_64-unknown-linux-musl/release/$(BINARY_NAME)"
 
 dist: ## Create distribution packages for all platforms
 	@echo "📦 Creating distribution packages..."
