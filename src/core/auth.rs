@@ -55,21 +55,21 @@ impl AuthManager {
         }
     }
 
-    /// Store a credential
-    pub fn store_credential(&self, provider: &str, username: &str, token: &str) -> Result<()> {
-        info!("Storing credential for {}:{}", provider, username);
+    /// Store a credential (host-bound for security)
+    pub fn store_credential(&self, provider: &str, host: &str, username: &str, token: &str) -> Result<()> {
+        info!("Storing credential for {}:{}:{}", provider, host, username);
 
         let result = match self.preferred_backend {
             AuthBackend::Keyring => {
                 if let Some(ref keyring) = self.keyring {
-                    keyring.store_provider_token(provider, username, token)
+                    keyring.store_provider_token(provider, host, username, token)
                 } else {
                     Err(MultiGitError::Other("Keyring not initialized".to_string()))
                 }
             }
             AuthBackend::EncryptedFile => {
                 if let Some(ref store) = self.encrypted_store {
-                    store.store(provider, username, token)
+                    store.store(provider, host, username, token)
                 } else {
                     Err(MultiGitError::Other(
                         "Encrypted store not initialized".to_string(),
@@ -85,7 +85,7 @@ impl AuthManager {
         if let Some(ref logger) = self.audit_logger {
             let entry = AuditEntry::new(
                 AuditEventType::CredentialStore,
-                format!("{provider}:{username}"),
+                format!("{provider}:{host}:{username}"),
                 result.is_ok(),
             );
             logger.log(entry);
@@ -94,29 +94,31 @@ impl AuthManager {
         result
     }
 
-    /// Retrieve a credential
-    pub fn retrieve_credential(&self, provider: &str, username: &str) -> Result<String> {
-        debug!("Retrieving credential for {}:{}", provider, username);
+    /// Retrieve a credential (host-bound with automatic migration)
+    pub fn retrieve_credential(&self, provider: &str, host: &str, username: &str, allow_env: bool) -> Result<String> {
+        debug!("Retrieving credential for {}:{}:{}", provider, host, username);
 
-        // Try environment variables first
-        let env_var = format!("MULTIGIT_{}_TOKEN", provider.to_uppercase());
-        if let Ok(token) = std::env::var(&env_var) {
-            debug!("Found token in environment variable: {}", env_var);
-            return Ok(token);
+        // Try environment variables if allowed
+        if allow_env {
+            let env_var = format!("MULTIGIT_{}_TOKEN", provider.to_uppercase());
+            if let Ok(token) = std::env::var(&env_var) {
+                info!("Using token from environment variable: {} (provider: {}, host: {})", env_var, provider, host);
+                return Ok(token);
+            }
         }
 
         // Try preferred backend
         let result = match self.preferred_backend {
             AuthBackend::Keyring | AuthBackend::Environment => {
                 if let Some(ref keyring) = self.keyring {
-                    keyring.retrieve_provider_token(provider, username)
+                    keyring.retrieve_provider_token(provider, host, username)
                 } else {
                     Err(MultiGitError::Other("Keyring not initialized".to_string()))
                 }
             }
             AuthBackend::EncryptedFile => {
                 if let Some(ref store) = self.encrypted_store {
-                    store.retrieve(provider, username)
+                    store.retrieve(provider, host, username)
                 } else {
                     Err(MultiGitError::Other(
                         "Encrypted store not initialized".to_string(),
@@ -129,7 +131,7 @@ impl AuthManager {
         if let Some(ref logger) = self.audit_logger {
             let entry = AuditEntry::new(
                 AuditEventType::CredentialRetrieve,
-                format!("{provider}:{username}"),
+                format!("{provider}:{host}:{username}"),
                 result.is_ok(),
             );
             logger.log(entry);
@@ -139,25 +141,25 @@ impl AuthManager {
     }
 
     /// Remove a credential (alias for `delete_credential`)
-    pub fn remove_credential(&self, provider: &str, username: &str) -> Result<()> {
-        self.delete_credential(provider, username)
+    pub fn remove_credential(&self, provider: &str, host: &str, username: &str) -> Result<()> {
+        self.delete_credential(provider, host, username)
     }
 
-    /// Delete a credential
-    pub fn delete_credential(&self, provider: &str, username: &str) -> Result<()> {
-        info!("Deleting credential for {}:{}", provider, username);
+    /// Delete a credential (tries both host-bound and legacy keys)
+    pub fn delete_credential(&self, provider: &str, host: &str, username: &str) -> Result<()> {
+        info!("Deleting credential for {}:{}:{}", provider, host, username);
 
         let result = match self.preferred_backend {
             AuthBackend::Keyring => {
                 if let Some(ref keyring) = self.keyring {
-                    keyring.delete_provider_token(provider, username)
+                    keyring.delete_provider_token(provider, host, username)
                 } else {
                     Err(MultiGitError::Other("Keyring not initialized".to_string()))
                 }
             }
             AuthBackend::EncryptedFile => {
                 if let Some(ref store) = self.encrypted_store {
-                    store.delete(provider, username)
+                    store.delete(provider, host, username)
                 } else {
                     Err(MultiGitError::Other(
                         "Encrypted store not initialized".to_string(),
@@ -173,7 +175,7 @@ impl AuthManager {
         if let Some(ref logger) = self.audit_logger {
             let entry = AuditEntry::new(
                 AuditEventType::CredentialDelete,
-                format!("{provider}:{username}"),
+                format!("{provider}:{host}:{username}"),
                 result.is_ok(),
             );
             logger.log(entry);
@@ -238,26 +240,53 @@ impl EncryptedCredentialStore {
         Ok(())
     }
 
-    fn store(&self, provider: &str, username: &str, token: &str) -> Result<()> {
+    fn store(&self, provider: &str, host: &str, username: &str, token: &str) -> Result<()> {
         let mut store = self.load_store()?;
-        let key = format!("{provider}:{username}");
+        let key = format!("{provider}:{host}:{username}");
         store.insert(key, token.to_string());
         self.save_store(&store)
     }
 
-    fn retrieve(&self, provider: &str, username: &str) -> Result<String> {
+    fn retrieve(&self, provider: &str, host: &str, username: &str) -> Result<String> {
         let store = self.load_store()?;
-        let key = format!("{provider}:{username}");
-        store
-            .get(&key)
-            .cloned()
-            .ok_or_else(|| MultiGitError::Other(format!("Credential not found: {key}")))
+        let key = format!("{provider}:{host}:{username}");
+        
+        // Try new host-bound key first
+        if let Some(token) = store.get(&key) {
+            return Ok(token.clone());
+        }
+        
+        // Try legacy key for migration
+        let legacy_key = format!("{provider}:{username}");
+        if let Some(token) = store.get(&legacy_key) {
+            debug!("Found legacy credential, migrating to host-bound key");
+            
+            // Migrate to new key
+            let mut new_store = store.clone();
+            new_store.insert(key.clone(), token.clone());
+            new_store.remove(&legacy_key);
+            
+            if let Err(e) = self.save_store(&new_store) {
+                debug!("Failed to migrate credential: {}", e);
+            } else {
+                info!("Successfully migrated encrypted credential to host-bound key");
+            }
+            
+            return Ok(token.clone());
+        }
+        
+        Err(MultiGitError::Other(format!("Credential not found: {key}")))
     }
 
-    fn delete(&self, provider: &str, username: &str) -> Result<()> {
+    fn delete(&self, provider: &str, host: &str, username: &str) -> Result<()> {
         let mut store = self.load_store()?;
-        let key = format!("{provider}:{username}");
+        let key = format!("{provider}:{host}:{username}");
         store.remove(&key);
+        
+        // Also remove legacy key if exists
+        let legacy_key = format!("{provider}:{username}");
+        store.remove(&legacy_key);
+        
         self.save_store(&store)
     }
 }
@@ -277,10 +306,15 @@ mod tests {
         std::env::set_var("MULTIGIT_GITHUB_TOKEN", "test_token_123");
 
         let manager = AuthManager::new(AuthBackend::Environment, false);
-        let result = manager.retrieve_credential("github", "testuser");
+        // Environment tokens must be explicitly allowed
+        let result = manager.retrieve_credential("github", "github.com", "testuser", true);
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "test_token_123");
+
+        // Should not work when allow_env is false
+        let result_no_env = manager.retrieve_credential("github", "github.com", "testuser", false);
+        assert!(result_no_env.is_err());
 
         std::env::remove_var("MULTIGIT_GITHUB_TOKEN");
     }
