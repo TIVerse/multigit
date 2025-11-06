@@ -202,7 +202,7 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
     // Store credentials with host binding
     let auth_manager = AuthManager::new(AuthBackend::Keyring, false);
     auth_manager.store_credential(provider, &host, &username, &token)?;
-    println!("✅ Credentials stored securely (bound to host: {})", host);
+    println!("✅ Credentials stored securely (bound to host: {host})");
 
     // Add to config
     let remote_config = RemoteConfig {

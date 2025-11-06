@@ -84,7 +84,7 @@ pub fn redact_cli(text: &str) -> String {
     // CLI flags with sensitive values (--token, --password, --secret, -t, -p)
     static CLI_FLAG_REGEX: OnceLock<Regex> = OnceLock::new();
     let cli_flag_regex = CLI_FLAG_REGEX.get_or_init(|| {
-        Regex::new(r#"(?i)(-{1,2}(?:token|password|secret|auth|key|passwd|pwd)(?:[=\s]+))([^\s]+)"#).unwrap()
+        Regex::new(r"(?i)(-{1,2}(?:token|password|secret|auth|key|passwd|pwd)(?:[=\s]+))([^\s]+)").unwrap()
     });
     result = cli_flag_regex.replace_all(&result, "$1***REDACTED***").to_string();
 
@@ -150,8 +150,8 @@ mod tests {
     fn test_redact_aws_keys() {
         let text = "AWS Key: AKIAIOSFODNN7EXAMPLE";
         let redacted = redact(text);
-        eprintln!("Original: {}", text);
-        eprintln!("Redacted: {}", redacted);
+        eprintln!("Original: {text}");
+        eprintln!("Redacted: {redacted}");
         // AWS key pattern requires all uppercase, but key-value regex catches it first
         assert!(redacted.contains("***REDACTED***"));
         assert!(!redacted.contains("AKIAIOSFODNN7EXAMPLE"));

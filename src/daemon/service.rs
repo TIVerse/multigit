@@ -297,7 +297,7 @@ async fn perform_sync() -> std::result::Result<(), Box<dyn std::error::Error + S
         warn!("[Daemon] Sync failed: {}", redacted_stderr);
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::Other,
-            format!("Sync command failed: {}", redacted_stderr),
+            format!("Sync command failed: {redacted_stderr}"),
         )) as Box<dyn std::error::Error + Send + Sync>);
     }
 

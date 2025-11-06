@@ -91,28 +91,27 @@ impl KeyringManager {
         let key = format!("{provider}:{host}:{username}:token");
         
         // Try new host-bound key first
-        match self.retrieve(&key) {
-            Ok(token) => Ok(token),
-            Err(_) => {
-                // Try legacy key format for migration
-                let legacy_key = format!("{provider}:{username}:token");
-                match self.retrieve(&legacy_key) {
-                    Ok(token) => {
-                        debug!("Migrating legacy credential key to host-bound format");
-                        
-                        // Store under new key
-                        if let Err(e) = self.store(&key, &token) {
-                            debug!("Failed to migrate credential: {}", e);
-                        } else {
-                            // Delete old key (ignore errors)
-                            let _ = self.delete(&legacy_key);
-                            info!("Successfully migrated credential to host-bound key: {provider}:{host}:{username}");
-                        }
-                        
-                        Ok(token)
+        if let Ok(token) = self.retrieve(&key) {
+            Ok(token)
+        } else {
+            // Try legacy key format for migration
+            let legacy_key = format!("{provider}:{username}:token");
+            match self.retrieve(&legacy_key) {
+                Ok(token) => {
+                    debug!("Migrating legacy credential key to host-bound format");
+                    
+                    // Store under new key
+                    if let Err(e) = self.store(&key, &token) {
+                        debug!("Failed to migrate credential: {e}");
+                    } else {
+                        // Delete old key (ignore errors)
+                        let _ = self.delete(&legacy_key);
+                        info!("Successfully migrated credential to host-bound key: {provider}:{host}:{username}");
                     }
-                    Err(e) => Err(e),
+                    
+                    Ok(token)
                 }
+                Err(e) => Err(e),
             }
         }
     }

@@ -96,7 +96,7 @@ pub async fn add_remote(
     let auth_manager = AuthManager::new(AuthBackend::Keyring, config.security.audit_log);
 
     auth_manager.store_credential(&provider_lower, &host, &username, &token)?;
-    interactive::print_success(&format!("Credentials stored securely (bound to host: {})", host));
+    interactive::print_success(&format!("Credentials stored securely (bound to host: {host})"));
 
     // Update config
     let remote_config = RemoteConfig {
