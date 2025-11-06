@@ -150,7 +150,7 @@ jobs:
           "ASSET_NAME=$pkgName.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
       
       - name: Upload release package
-        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: ${{ matrix.os-name }}-${{ matrix.arch }}-package
           path: ${{ env.ASSET_NAME }}
