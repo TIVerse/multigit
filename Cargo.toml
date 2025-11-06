@@ -70,7 +70,7 @@ sled = "0.34"
 
 # Unix signals (for daemon)
 [target.'cfg(unix)'.dependencies]
-nix = { version = "0.27", features = ["signal"] }
+nix = { version = "0.30", features = ["signal"] }
 
 [dev-dependencies]
 mockito = "1.2"
