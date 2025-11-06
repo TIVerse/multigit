@@ -80,22 +80,53 @@ impl KeyringManager {
         self.retrieve(key).is_ok()
     }
 
-    /// Store a provider token
-    pub fn store_provider_token(&self, provider: &str, username: &str, token: &str) -> Result<()> {
-        let key = format!("{provider}:{username}:token");
+    /// Store a provider token (host-bound for security)
+    pub fn store_provider_token(&self, provider: &str, host: &str, username: &str, token: &str) -> Result<()> {
+        let key = format!("{provider}:{host}:{username}:token");
         self.store(&key, token)
     }
 
-    /// Retrieve a provider token
-    pub fn retrieve_provider_token(&self, provider: &str, username: &str) -> Result<String> {
-        let key = format!("{provider}:{username}:token");
-        self.retrieve(&key)
+    /// Retrieve a provider token (with automatic migration from legacy keys)
+    pub fn retrieve_provider_token(&self, provider: &str, host: &str, username: &str) -> Result<String> {
+        let key = format!("{provider}:{host}:{username}:token");
+        
+        // Try new host-bound key first
+        match self.retrieve(&key) {
+            Ok(token) => Ok(token),
+            Err(_) => {
+                // Try legacy key format for migration
+                let legacy_key = format!("{provider}:{username}:token");
+                match self.retrieve(&legacy_key) {
+                    Ok(token) => {
+                        debug!("Migrating legacy credential key to host-bound format");
+                        
+                        // Store under new key
+                        if let Err(e) = self.store(&key, &token) {
+                            debug!("Failed to migrate credential: {}", e);
+                        } else {
+                            // Delete old key (ignore errors)
+                            let _ = self.delete(&legacy_key);
+                            info!("Successfully migrated credential to host-bound key: {provider}:{host}:{username}");
+                        }
+                        
+                        Ok(token)
+                    }
+                    Err(e) => Err(e),
+                }
+            }
+        }
     }
 
-    /// Delete a provider token
-    pub fn delete_provider_token(&self, provider: &str, username: &str) -> Result<()> {
-        let key = format!("{provider}:{username}:token");
-        self.delete(&key)
+    /// Delete a provider token (tries both new and legacy formats)
+    pub fn delete_provider_token(&self, provider: &str, host: &str, username: &str) -> Result<()> {
+        let key = format!("{provider}:{host}:{username}:token");
+        let result = self.delete(&key);
+        
+        // Also try to delete legacy key if it exists
+        let legacy_key = format!("{provider}:{username}:token");
+        let _ = self.delete(&legacy_key);
+        
+        result
     }
 }
 
@@ -154,20 +185,50 @@ mod tests {
         let manager = KeyringManager::new();
 
         let provider = "github";
+        let host = "github.com";
         let username = "testuser";
         let token = "ghp_test_token_123";
 
-        // Store provider token
+        // Store provider token with host binding
         if manager
-            .store_provider_token(provider, username, token)
+            .store_provider_token(provider, host, username, token)
             .is_ok()
         {
             // Retrieve provider token
-            let retrieved = manager.retrieve_provider_token(provider, username).unwrap();
+            let retrieved = manager.retrieve_provider_token(provider, host, username).unwrap();
             assert_eq!(retrieved, token);
 
             // Cleanup
-            let _ = manager.delete_provider_token(provider, username);
+            let _ = manager.delete_provider_token(provider, host, username);
+        }
+    }
+
+    #[test]
+    fn test_legacy_token_migration() {
+        let manager = KeyringManager::new();
+
+        let provider = "gitlab";
+        let host = "gitlab.com";
+        let username = "testuser";
+        let token = "glpat_test_token_456";
+
+        // Simulate legacy key (without host)
+        let legacy_key = format!("{provider}:{username}:token");
+        if manager.store(&legacy_key, token).is_ok() {
+            // Retrieve should migrate automatically
+            let retrieved = manager.retrieve_provider_token(provider, host, username);
+            
+            if let Ok(retrieved_token) = retrieved {
+                assert_eq!(retrieved_token, token);
+                
+                // New key should exist after migration
+                let new_key = format!("{provider}:{host}:{username}:token");
+                assert!(manager.exists(&new_key));
+                
+                // Cleanup both keys
+                let _ = manager.delete(&new_key);
+                let _ = manager.delete(&legacy_key);
+            }
         }
     }
 }
