@@ -8,6 +8,7 @@ use crate::providers::github::GitHubProvider;
 use crate::providers::gitlab::GitLabProvider;
 use crate::providers::traits::Provider;
 use crate::utils::error::{MultiGitError, Result};
+use crate::utils::validation::{extract_host_from_url, validate_https_url};
 use std::sync::Arc;
 
 /// Create a provider instance from configuration
@@ -17,6 +18,7 @@ use std::sync::Arc;
 /// * `username` - Username on the provider
 /// * `token` - Authentication token
 /// * `api_url` - Optional custom API URL (required for self-hosted instances)
+/// * `allow_insecure` - Whether to allow HTTP URLs (default: false)
 ///
 /// # Returns
 /// Arc-wrapped provider instance implementing the Provider trait
@@ -25,6 +27,7 @@ pub fn create_provider(
     username: &str,
     token: &str,
     api_url: Option<&str>,
+    allow_insecure: bool,
 ) -> Result<Arc<dyn Provider>> {
     let provider_instance: Arc<dyn Provider> = match provider {
         "github" => {
@@ -32,8 +35,12 @@ pub fn create_provider(
             Arc::new(p)
         }
         "gitlab" => {
-            let url = api_url.map(std::string::ToString::to_string);
-            let p = GitLabProvider::new(token.to_string(), username.to_string(), url)?;
+            let validated_url = if let Some(url) = api_url {
+                Some(validate_https_url(url, allow_insecure)?)
+            } else {
+                None
+            };
+            let p = GitLabProvider::new(token.to_string(), username.to_string(), validated_url)?;
             Arc::new(p)
         }
         "bitbucket" => {
@@ -44,7 +51,8 @@ pub fn create_provider(
             let url = api_url.ok_or_else(|| {
                 MultiGitError::config("Gitea requires an API URL. Use --url flag".to_string())
             })?;
-            let p = GiteaProvider::new(token.to_string(), username.to_string(), url.to_string())?;
+            let validated_url = validate_https_url(url, allow_insecure)?;
+            let p = GiteaProvider::new(token.to_string(), username.to_string(), validated_url)?;
             Arc::new(p)
         }
         "codeberg" => {
@@ -86,6 +94,43 @@ pub fn supported_providers() -> &'static [&'static str] {
     &["github", "gitlab", "bitbucket", "codeberg", "gitea"]
 }
 
+/// Get the canonical host for a provider (for credential binding)
+/// 
+/// # Arguments
+/// * `provider` - Provider name
+/// * `api_url` - Optional custom API URL (for self-hosted instances)
+/// * `allow_insecure` - Whether to allow HTTP URLs (default: false)
+///
+/// # Returns
+/// The host string to use for credential binding
+pub fn get_provider_host(provider: &str, api_url: Option<&str>, allow_insecure: bool) -> Result<String> {
+    match provider {
+        "github" => Ok("github.com".to_string()),
+        "bitbucket" => Ok("bitbucket.org".to_string()),
+        "codeberg" => Ok("codeberg.org".to_string()),
+        "gitlab" => {
+            if let Some(url) = api_url {
+                // Validate and extract host from custom URL
+                let validated_url = validate_https_url(url, allow_insecure)?;
+                extract_host_from_url(&validated_url)
+            } else {
+                Ok("gitlab.com".to_string())
+            }
+        }
+        "gitea" => {
+            let url = api_url.ok_or_else(|| {
+                MultiGitError::config("Gitea requires an API URL".to_string())
+            })?;
+            // Validate and extract host
+            let validated_url = validate_https_url(url, allow_insecure)?;
+            extract_host_from_url(&validated_url)
+        }
+        _ => Err(MultiGitError::other(format!(
+            "Unsupported provider: {provider}"
+        ))),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -106,5 +151,33 @@ mod tests {
         assert_eq!(providers.len(), 5);
         assert!(providers.contains(&"github"));
         assert!(providers.contains(&"gitlab"));
+    }
+
+    #[test]
+    fn test_get_provider_host_saas() {
+        // SaaS providers should return canonical hosts
+        assert_eq!(get_provider_host("github", None, false).unwrap(), "github.com");
+        assert_eq!(get_provider_host("gitlab", None, false).unwrap(), "gitlab.com");
+        assert_eq!(get_provider_host("bitbucket", None, false).unwrap(), "bitbucket.org");
+        assert_eq!(get_provider_host("codeberg", None, false).unwrap(), "codeberg.org");
+    }
+
+    #[test]
+    fn test_get_provider_host_self_hosted() {
+        // Self-hosted GitLab
+        let host = get_provider_host("gitlab", Some("https://gitlab.example.com"), false);
+        assert_eq!(host.unwrap(), "gitlab.example.com");
+
+        // Self-hosted Gitea
+        let host = get_provider_host("gitea", Some("https://git.example.com"), false);
+        assert_eq!(host.unwrap(), "git.example.com");
+
+        // HTTP should be rejected by default
+        let host = get_provider_host("gitea", Some("http://git.example.com"), false);
+        assert!(host.is_err());
+
+        // HTTP should work with allow_insecure
+        let host = get_provider_host("gitea", Some("http://git.example.com"), true);
+        assert_eq!(host.unwrap(), "git.example.com");
     }
 }
