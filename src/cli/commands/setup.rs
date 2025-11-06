@@ -6,7 +6,7 @@ use crate::cli::interactive;
 use crate::core::auth::{AuthBackend, AuthManager};
 use crate::core::config::{Config, RemoteConfig};
 use crate::git::operations::GitOperations;
-use crate::providers::factory::create_provider;
+use crate::providers::factory::{create_provider, get_provider_host};
 use crate::providers::traits::{Protocol, Provider};
 use crate::utils::error::{MultiGitError, Result};
 use dialoguer::{theme::ColorfulTheme, Confirm, MultiSelect, Select};
@@ -175,10 +175,17 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
         None
     };
 
+    // Load config to get security settings
+    let current_config = Config::load().unwrap_or_default();
+    let allow_insecure = current_config.security.allow_insecure_http;
+
+    // Get host for credential binding
+    let host = get_provider_host(provider, api_url.as_deref(), allow_insecure)?;
+
     // Test connection
     println!("\n🔍 Testing connection...");
 
-    let test_provider = create_test_provider(provider, &username, &token, api_url.as_deref())?;
+    let test_provider = create_test_provider(provider, &username, &token, api_url.as_deref(), allow_insecure)?;
 
     match test_provider.test_connection().await {
         Ok(true) => {
@@ -192,10 +199,10 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
         }
     }
 
-    // Store credentials
+    // Store credentials with host binding
     let auth_manager = AuthManager::new(AuthBackend::Keyring, false);
-    auth_manager.store_credential(provider, &username, &token)?;
-    println!("✅ Credentials stored securely");
+    auth_manager.store_credential(provider, &host, &username, &token)?;
+    println!("✅ Credentials stored securely (bound to host: {})", host);
 
     // Add to config
     let remote_config = RemoteConfig {
@@ -219,7 +226,7 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
             .unwrap_or_else(|| "repo".to_string());
 
         // Get the remote URL from provider (re-create provider for URL generation)
-        let test_provider = create_test_provider(provider, &username, &token, api_url.as_deref())?;
+        let test_provider = create_test_provider(provider, &username, &token, api_url.as_deref(), allow_insecure)?;
         let remote_url = test_provider.get_remote_url(&repo_name, Protocol::Https);
 
         // Add git remote
@@ -292,8 +299,9 @@ fn create_test_provider(
     username: &str,
     token: &str,
     api_url: Option<&str>,
+    allow_insecure: bool,
 ) -> Result<Arc<dyn Provider>> {
-    create_provider(provider, username, token, api_url)
+    create_provider(provider, username, token, api_url, allow_insecure)
 }
 
 /// Configure advanced preferences
