@@ -185,7 +185,13 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
     // Test connection
     println!("\n🔍 Testing connection...");
 
-    let test_provider = create_test_provider(provider, &username, &token, api_url.as_deref(), allow_insecure)?;
+    let test_provider = create_test_provider(
+        provider,
+        &username,
+        &token,
+        api_url.as_deref(),
+        allow_insecure,
+    )?;
 
     match test_provider.test_connection().await {
         Ok(true) => {
@@ -226,7 +232,13 @@ async fn add_provider_guided(config: &mut Config, provider: &str) -> Result<()> 
             .unwrap_or_else(|| "repo".to_string());
 
         // Get the remote URL from provider (re-create provider for URL generation)
-        let test_provider = create_test_provider(provider, &username, &token, api_url.as_deref(), allow_insecure)?;
+        let test_provider = create_test_provider(
+            provider,
+            &username,
+            &token,
+            api_url.as_deref(),
+            allow_insecure,
+        )?;
         let remote_url = test_provider.get_remote_url(&repo_name, Protocol::Https);
 
         // Add git remote

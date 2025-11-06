@@ -73,7 +73,13 @@ pub async fn add_remote(
 
     // Test connection before saving
     interactive::print_info(&format!("Testing connection to {provider_name}..."));
-    let provider = create_provider(&provider_lower, &username, &token, api_url.as_deref(), allow_insecure)?;
+    let provider = create_provider(
+        &provider_lower,
+        &username,
+        &token,
+        api_url.as_deref(),
+        allow_insecure,
+    )?;
 
     match provider.test_connection().await {
         Ok(true) => {
@@ -96,7 +102,9 @@ pub async fn add_remote(
     let auth_manager = AuthManager::new(AuthBackend::Keyring, config.security.audit_log);
 
     auth_manager.store_credential(&provider_lower, &host, &username, &token)?;
-    interactive::print_success(&format!("Credentials stored securely (bound to host: {host})"));
+    interactive::print_success(&format!(
+        "Credentials stored securely (bound to host: {host})"
+    ));
 
     // Update config
     let remote_config = RemoteConfig {
@@ -253,7 +261,8 @@ pub fn remove_remote(name: String, force: bool) -> Result<()> {
     // Get host for credential deletion (best effort)
     if let Ok(host) = get_provider_host(&name_lower, remote_config.api_url.as_deref(), false) {
         // Attempt to remove credentials (don't fail if they don't exist)
-        if let Err(e) = auth_manager.remove_credential(&name_lower, &host, &remote_config.username) {
+        if let Err(e) = auth_manager.remove_credential(&name_lower, &host, &remote_config.username)
+        {
             warn!("Failed to remove credentials: {}", e);
             interactive::print_warning("Could not remove stored credentials (they may not exist)");
         }
@@ -282,7 +291,11 @@ pub async fn test_remote(name: String) -> Result<()> {
     // Get host for credential retrieval
     let allow_insecure = config.security.allow_insecure_http;
     let allow_env = config.security.allow_env_tokens;
-    let host = get_provider_host(&name_lower, remote_config.api_url.as_deref(), allow_insecure)?;
+    let host = get_provider_host(
+        &name_lower,
+        remote_config.api_url.as_deref(),
+        allow_insecure,
+    )?;
 
     // Get credentials
     let auth_manager = AuthManager::new(AuthBackend::Keyring, config.security.audit_log);
@@ -360,7 +373,11 @@ pub async fn update_remote(name: String, interactive_mode: bool) -> Result<()> {
 
     // Get host for credential binding
     let allow_insecure = config.security.allow_insecure_http;
-    let host = get_provider_host(&name_lower, remote_config.api_url.as_deref(), allow_insecure)?;
+    let host = get_provider_host(
+        &name_lower,
+        remote_config.api_url.as_deref(),
+        allow_insecure,
+    )?;
 
     // Test new credentials
     interactive::print_info("Testing new credentials...");

@@ -28,49 +28,63 @@ pub fn redact(text: &str) -> String {
     let github_regex = GITHUB_TOKEN_REGEX.get_or_init(|| {
         Regex::new(r"(gh[psorv]_[a-zA-Z0-9]{36,}|github_pat_[a-zA-Z0-9_]{82})").unwrap()
     });
-    result = github_regex.replace_all(&result, "***REDACTED***").to_string();
+    result = github_regex
+        .replace_all(&result, "***REDACTED***")
+        .to_string();
 
     // GitLab tokens (glpat-)
     static GITLAB_TOKEN_REGEX: OnceLock<Regex> = OnceLock::new();
-    let gitlab_regex = GITLAB_TOKEN_REGEX.get_or_init(|| {
-        Regex::new(r"glpat-[a-zA-Z0-9_-]{20,}").unwrap()
-    });
-    result = gitlab_regex.replace_all(&result, "***REDACTED***").to_string();
+    let gitlab_regex =
+        GITLAB_TOKEN_REGEX.get_or_init(|| Regex::new(r"glpat-[a-zA-Z0-9_-]{20,}").unwrap());
+    result = gitlab_regex
+        .replace_all(&result, "***REDACTED***")
+        .to_string();
 
     // Bearer tokens
     static BEARER_REGEX: OnceLock<Regex> = OnceLock::new();
-    let bearer_regex = BEARER_REGEX.get_or_init(|| {
-        Regex::new(r"(?i)bearer\s+[a-zA-Z0-9_\-\.]{20,}").unwrap()
-    });
-    result = bearer_regex.replace_all(&result, "Bearer ***REDACTED***").to_string();
+    let bearer_regex =
+        BEARER_REGEX.get_or_init(|| Regex::new(r"(?i)bearer\s+[a-zA-Z0-9_\-\.]{20,}").unwrap());
+    result = bearer_regex
+        .replace_all(&result, "Bearer ***REDACTED***")
+        .to_string();
 
     // Generic JWT tokens (three base64 segments separated by dots)
     static JWT_REGEX: OnceLock<Regex> = OnceLock::new();
     let jwt_regex = JWT_REGEX.get_or_init(|| {
         Regex::new(r"eyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*").unwrap()
     });
-    result = jwt_regex.replace_all(&result, "***REDACTED_JWT***").to_string();
+    result = jwt_regex
+        .replace_all(&result, "***REDACTED_JWT***")
+        .to_string();
 
     // URL-embedded credentials (username:password@host)
     static URL_CRED_REGEX: OnceLock<Regex> = OnceLock::new();
-    let url_cred_regex = URL_CRED_REGEX.get_or_init(|| {
-        Regex::new(r"://([^:@\s]+):([^@\s]+)@").unwrap()
-    });
-    result = url_cred_regex.replace_all(&result, "://***:***@").to_string();
+    let url_cred_regex =
+        URL_CRED_REGEX.get_or_init(|| Regex::new(r"://([^:@\s]+):([^@\s]+)@").unwrap());
+    result = url_cred_regex
+        .replace_all(&result, "://***:***@")
+        .to_string();
 
     // Key-value pairs with sensitive keys (token=, password=, secret=, key=, api_key=, auth=)
     static KEY_VALUE_REGEX: OnceLock<Regex> = OnceLock::new();
     let key_value_regex = KEY_VALUE_REGEX.get_or_init(|| {
-        Regex::new(r#"(?i)(token|password|secret|key|api_key|auth|passwd|pwd)([=:]\s*['"]?)([^\s'"&,;]+)"#).unwrap()
+        Regex::new(
+            r#"(?i)(token|password|secret|key|api_key|auth|passwd|pwd)([=:]\s*['"]?)([^\s'"&,;]+)"#,
+        )
+        .unwrap()
     });
-    result = key_value_regex.replace_all(&result, "$1$2***REDACTED***").to_string();
+    result = key_value_regex
+        .replace_all(&result, "$1$2***REDACTED***")
+        .to_string();
 
     // AWS keys
     static AWS_KEY_REGEX: OnceLock<Regex> = OnceLock::new();
     let aws_key_regex = AWS_KEY_REGEX.get_or_init(|| {
         Regex::new(r"(?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}").unwrap()
     });
-    result = aws_key_regex.replace_all(&result, "***REDACTED_AWS***").to_string();
+    result = aws_key_regex
+        .replace_all(&result, "***REDACTED_AWS***")
+        .to_string();
 
     result
 }
@@ -84,9 +98,12 @@ pub fn redact_cli(text: &str) -> String {
     // CLI flags with sensitive values (--token, --password, --secret, -t, -p)
     static CLI_FLAG_REGEX: OnceLock<Regex> = OnceLock::new();
     let cli_flag_regex = CLI_FLAG_REGEX.get_or_init(|| {
-        Regex::new(r"(?i)(-{1,2}(?:token|password|secret|auth|key|passwd|pwd)(?:[=\s]+))([^\s]+)").unwrap()
+        Regex::new(r"(?i)(-{1,2}(?:token|password|secret|auth|key|passwd|pwd)(?:[=\s]+))([^\s]+)")
+            .unwrap()
     });
-    result = cli_flag_regex.replace_all(&result, "$1***REDACTED***").to_string();
+    result = cli_flag_regex
+        .replace_all(&result, "$1***REDACTED***")
+        .to_string();
 
     result
 }

@@ -56,7 +56,13 @@ impl AuthManager {
     }
 
     /// Store a credential (host-bound for security)
-    pub fn store_credential(&self, provider: &str, host: &str, username: &str, token: &str) -> Result<()> {
+    pub fn store_credential(
+        &self,
+        provider: &str,
+        host: &str,
+        username: &str,
+        token: &str,
+    ) -> Result<()> {
         info!("Storing credential for {}:{}:{}", provider, host, username);
 
         let result = match self.preferred_backend {
@@ -95,14 +101,26 @@ impl AuthManager {
     }
 
     /// Retrieve a credential (host-bound with automatic migration)
-    pub fn retrieve_credential(&self, provider: &str, host: &str, username: &str, allow_env: bool) -> Result<String> {
-        debug!("Retrieving credential for {}:{}:{}", provider, host, username);
+    pub fn retrieve_credential(
+        &self,
+        provider: &str,
+        host: &str,
+        username: &str,
+        allow_env: bool,
+    ) -> Result<String> {
+        debug!(
+            "Retrieving credential for {}:{}:{}",
+            provider, host, username
+        );
 
         // Try environment variables if allowed
         if allow_env {
             let env_var = format!("MULTIGIT_{}_TOKEN", provider.to_uppercase());
             if let Ok(token) = std::env::var(&env_var) {
-                info!("Using token from environment variable: {} (provider: {}, host: {})", env_var, provider, host);
+                info!(
+                    "Using token from environment variable: {} (provider: {}, host: {})",
+                    env_var, provider, host
+                );
                 return Ok(token);
             }
         }
@@ -250,31 +268,31 @@ impl EncryptedCredentialStore {
     fn retrieve(&self, provider: &str, host: &str, username: &str) -> Result<String> {
         let store = self.load_store()?;
         let key = format!("{provider}:{host}:{username}");
-        
+
         // Try new host-bound key first
         if let Some(token) = store.get(&key) {
             return Ok(token.clone());
         }
-        
+
         // Try legacy key for migration
         let legacy_key = format!("{provider}:{username}");
         if let Some(token) = store.get(&legacy_key) {
             debug!("Found legacy credential, migrating to host-bound key");
-            
+
             // Migrate to new key
             let mut new_store = store.clone();
             new_store.insert(key.clone(), token.clone());
             new_store.remove(&legacy_key);
-            
+
             if let Err(e) = self.save_store(&new_store) {
                 debug!("Failed to migrate credential: {}", e);
             } else {
                 info!("Successfully migrated encrypted credential to host-bound key");
             }
-            
+
             return Ok(token.clone());
         }
-        
+
         Err(MultiGitError::Other(format!("Credential not found: {key}")))
     }
 
@@ -282,11 +300,11 @@ impl EncryptedCredentialStore {
         let mut store = self.load_store()?;
         let key = format!("{provider}:{host}:{username}");
         store.remove(&key);
-        
+
         // Also remove legacy key if exists
         let legacy_key = format!("{provider}:{username}");
         store.remove(&legacy_key);
-        
+
         self.save_store(&store)
     }
 }

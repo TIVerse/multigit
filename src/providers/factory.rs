@@ -95,7 +95,7 @@ pub fn supported_providers() -> &'static [&'static str] {
 }
 
 /// Get the canonical host for a provider (for credential binding)
-/// 
+///
 /// # Arguments
 /// * `provider` - Provider name
 /// * `api_url` - Optional custom API URL (for self-hosted instances)
@@ -103,7 +103,11 @@ pub fn supported_providers() -> &'static [&'static str] {
 ///
 /// # Returns
 /// The host string to use for credential binding
-pub fn get_provider_host(provider: &str, api_url: Option<&str>, allow_insecure: bool) -> Result<String> {
+pub fn get_provider_host(
+    provider: &str,
+    api_url: Option<&str>,
+    allow_insecure: bool,
+) -> Result<String> {
     match provider {
         "github" => Ok("github.com".to_string()),
         "bitbucket" => Ok("bitbucket.org".to_string()),
@@ -118,9 +122,8 @@ pub fn get_provider_host(provider: &str, api_url: Option<&str>, allow_insecure: 
             }
         }
         "gitea" => {
-            let url = api_url.ok_or_else(|| {
-                MultiGitError::config("Gitea requires an API URL".to_string())
-            })?;
+            let url = api_url
+                .ok_or_else(|| MultiGitError::config("Gitea requires an API URL".to_string()))?;
             // Validate and extract host
             let validated_url = validate_https_url(url, allow_insecure)?;
             extract_host_from_url(&validated_url)
@@ -156,10 +159,22 @@ mod tests {
     #[test]
     fn test_get_provider_host_saas() {
         // SaaS providers should return canonical hosts
-        assert_eq!(get_provider_host("github", None, false).unwrap(), "github.com");
-        assert_eq!(get_provider_host("gitlab", None, false).unwrap(), "gitlab.com");
-        assert_eq!(get_provider_host("bitbucket", None, false).unwrap(), "bitbucket.org");
-        assert_eq!(get_provider_host("codeberg", None, false).unwrap(), "codeberg.org");
+        assert_eq!(
+            get_provider_host("github", None, false).unwrap(),
+            "github.com"
+        );
+        assert_eq!(
+            get_provider_host("gitlab", None, false).unwrap(),
+            "gitlab.com"
+        );
+        assert_eq!(
+            get_provider_host("bitbucket", None, false).unwrap(),
+            "bitbucket.org"
+        );
+        assert_eq!(
+            get_provider_host("codeberg", None, false).unwrap(),
+            "codeberg.org"
+        );
     }
 
     #[test]

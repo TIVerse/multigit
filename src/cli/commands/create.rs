@@ -36,7 +36,12 @@ pub async fn execute(name: String, description: Option<String>, private: bool) -
 
     // Try to create on GitHub
     if let Some(github_config) = config.remotes.get("github") {
-        if let Ok(token) = auth_manager.retrieve_credential("github", "github.com", &github_config.username, allow_env) {
+        if let Ok(token) = auth_manager.retrieve_credential(
+            "github",
+            "github.com",
+            &github_config.username,
+            allow_env,
+        ) {
             match create_on_github(&token, &github_config.username, &repo_config).await {
                 Ok(url) => {
                     println!("✓ GitHub: Created successfully");
@@ -57,10 +62,14 @@ pub async fn execute(name: String, description: Option<String>, private: bool) -
 
     // Try to create on GitLab
     if let Some(gitlab_config) = config.remotes.get("gitlab") {
-        let host = gitlab_config.api_url.as_deref().and_then(|url| {
-            crate::utils::validation::extract_host_from_url(url).ok()
-        }).unwrap_or_else(|| "gitlab.com".to_string());
-        if let Ok(token) = auth_manager.retrieve_credential("gitlab", &host, &gitlab_config.username, allow_env) {
+        let host = gitlab_config
+            .api_url
+            .as_deref()
+            .and_then(|url| crate::utils::validation::extract_host_from_url(url).ok())
+            .unwrap_or_else(|| "gitlab.com".to_string());
+        if let Ok(token) =
+            auth_manager.retrieve_credential("gitlab", &host, &gitlab_config.username, allow_env)
+        {
             match create_on_gitlab(&token, &gitlab_config.username, &repo_config).await {
                 Ok(url) => {
                     println!("✓ GitLab: Created successfully");
@@ -81,9 +90,12 @@ pub async fn execute(name: String, description: Option<String>, private: bool) -
 
     // Try to create on Bitbucket
     if let Some(bitbucket_config) = config.remotes.get("bitbucket") {
-        if let Ok(password) =
-            auth_manager.retrieve_credential("bitbucket", "bitbucket.org", &bitbucket_config.username, allow_env)
-        {
+        if let Ok(password) = auth_manager.retrieve_credential(
+            "bitbucket",
+            "bitbucket.org",
+            &bitbucket_config.username,
+            allow_env,
+        ) {
             match create_on_bitbucket(&bitbucket_config.username, &password, &repo_config).await {
                 Ok(url) => {
                     println!("✓ Bitbucket: Created successfully");

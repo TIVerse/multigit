@@ -251,7 +251,7 @@ mod tests {
 
         // HTTP should be rejected when allow_insecure is false
         assert!(validate_https_url("http://example.com", false).is_err());
-        
+
         // HTTP should be allowed when allow_insecure is true
         assert!(validate_https_url("http://example.com", true).is_ok());
 
@@ -274,7 +274,7 @@ mod tests {
             extract_host_from_url("https://192.168.1.1/gitlab").unwrap(),
             "192.168.1.1"
         );
-        
+
         assert!(extract_host_from_url("not-a-url").is_err());
     }
 }
