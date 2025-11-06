@@ -1,0 +1,98 @@
+name: Security
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  schedule:
+    # Run security checks daily at 00:00 UTC
+    - cron: '0 0 * * *'
+
+# Restrict permissions to minimum required
+permissions:
+  contents: read
+  security-events: write
+
+# Cancel in-progress runs when a new workflow starts
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@9cd00a88a73addc8617065438eff914dd08d0955 # stable
+      
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      
+      - name: Run cargo audit
+        run: cargo audit --deny warnings
+      
+      - name: Upload audit results
+        if: failure()
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+        with:
+          name: audit-results
+          path: |
+            Cargo.lock
+          retention-days: 7
+
+  deny:
+    name: Cargo Deny Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@56ab7930c591507f833cbaebf1e7db9c9f3d4e23 # cargo-deny
+      
+      - name: Run cargo deny
+        run: cargo deny check advisories licenses sources
+
+  secrets-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0  # Fetch all history for gitleaks
+      
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@cb7149a9idfc50d73c6d9f1494e61a5d1e1e3dd1 # v2.3.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
+
+  clippy-security:
+    name: Clippy Security Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@9cd00a88a73addc8617065438eff914dd08d0955 # stable
+        with:
+          components: clippy
+      
+      - name: Run Clippy with security warnings
+        run: |
+          cargo clippy --all-targets --all-features -- \
+            -W clippy::expect_used \
+            -W clippy::unwrap_used \
+            -W clippy::panic \
+            -W clippy::todo \
+            -W clippy::unimplemented
