@@ -70,10 +70,11 @@ pub mod commands {
 
         // Create on remotes via API
         let auth_manager = AuthManager::new(AuthBackend::Keyring, false);
+        let allow_env = config.security.allow_env_tokens;
 
         // Try GitHub
         if let Some(github_config) = config.remotes.get("github") {
-            if let Ok(token) = auth_manager.retrieve_credential("github", &github_config.username) {
+            if let Ok(token) = auth_manager.retrieve_credential("github", "github.com", &github_config.username, allow_env) {
                 match create_on_github(&token, &name).await {
                     Ok(()) => println!("✓ GitHub: Branch created"),
                     Err(e) => println!("⚠ GitHub: {e}"),
@@ -83,7 +84,10 @@ pub mod commands {
 
         // Try GitLab
         if let Some(gitlab_config) = config.remotes.get("gitlab") {
-            if let Ok(token) = auth_manager.retrieve_credential("gitlab", &gitlab_config.username) {
+            let host = gitlab_config.api_url.as_deref().and_then(|url| {
+                crate::utils::validation::extract_host_from_url(url).ok()
+            }).unwrap_or_else(|| "gitlab.com".to_string());
+            if let Ok(token) = auth_manager.retrieve_credential("gitlab", &host, &gitlab_config.username, allow_env) {
                 match create_on_gitlab(&token, &name).await {
                     Ok(()) => println!("✓ GitLab: Branch created"),
                     Err(e) => println!("⚠ GitLab: {e}"),
@@ -119,10 +123,11 @@ pub mod commands {
 
         // Delete from remotes first
         let auth_manager = AuthManager::new(AuthBackend::Keyring, false);
+        let allow_env = config.security.allow_env_tokens;
 
         // Try GitHub
         if let Some(github_config) = config.remotes.get("github") {
-            if let Ok(token) = auth_manager.retrieve_credential("github", &github_config.username) {
+            if let Ok(token) = auth_manager.retrieve_credential("github", "github.com", &github_config.username, allow_env) {
                 match delete_on_github(&token, &name).await {
                     Ok(()) => println!("✓ GitHub: Branch deleted"),
                     Err(e) => println!("⚠ GitHub: {e}"),
@@ -132,7 +137,10 @@ pub mod commands {
 
         // Try GitLab
         if let Some(gitlab_config) = config.remotes.get("gitlab") {
-            if let Ok(token) = auth_manager.retrieve_credential("gitlab", &gitlab_config.username) {
+            let host = gitlab_config.api_url.as_deref().and_then(|url| {
+                crate::utils::validation::extract_host_from_url(url).ok()
+            }).unwrap_or_else(|| "gitlab.com".to_string());
+            if let Ok(token) = auth_manager.retrieve_credential("gitlab", &host, &gitlab_config.username, allow_env) {
                 match delete_on_gitlab(&token, &name).await {
                     Ok(()) => println!("✓ GitLab: Branch deleted"),
                     Err(e) => println!("⚠ GitLab: {e}"),
