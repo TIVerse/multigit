@@ -15,6 +15,8 @@ env:
 
 permissions:
   contents: write
+  actions: write
+  id-token: write
 
 jobs:
   build-release:
@@ -35,13 +37,13 @@ jobs:
             arch: x86_64-musl
             ext: ""
           
-          - os: macos-latest
+          - os: macos-13
             os-name: macos
             target: x86_64-apple-darwin
             arch: x86_64
             ext: ""
           
-          - os: macos-latest
+          - os: macos-14
             os-name: macos
             target: aarch64-apple-darwin
             arch: arm64

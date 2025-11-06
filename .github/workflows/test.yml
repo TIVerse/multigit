@@ -2,13 +2,15 @@ name: Test
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, main ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, main ]
 
 # Restrict permissions to minimum required
 permissions:
   contents: read
+  actions: write
+  id-token: write
 
 # Cancel in-progress runs when a new workflow starts
 concurrency:
