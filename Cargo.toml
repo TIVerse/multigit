@@ -35,8 +35,8 @@ thiserror = "2.0"
 git2 = { version = "0.20", features = ["vendored-libgit2"] }
 
 # CLI
-clap = { version = "4.4", features = ["derive", "cargo"] }
-clap_complete = "4.4"
+clap = { version = "4.5", features = ["derive", "cargo"] }
+clap_complete = "4.5"
 dialoguer = { version = "0.11", features = ["fuzzy-select"] }
 
 # API & Networking
@@ -75,7 +75,7 @@ nix = { version = "0.27", features = ["signal"] }
 [dev-dependencies]
 mockito = "1.2"
 tempfile = "3.8"
-assert_cmd = "2.0"
+assert_cmd = "2.1"
 predicates = "3.0"
 pretty_assertions = "1.4"
 
