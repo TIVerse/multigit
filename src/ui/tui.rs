@@ -82,9 +82,15 @@ pub enum Tab {
 
 impl Tab {
     pub fn all() -> &'static [Tab] {
-        &[Self::Dashboard, Self::Remotes, Self::Conflicts, Self::Settings, Self::Help]
+        &[
+            Self::Dashboard,
+            Self::Remotes,
+            Self::Conflicts,
+            Self::Settings,
+            Self::Help,
+        ]
     }
-    
+
     pub fn title(self) -> &'static str {
         match self {
             Self::Dashboard => "Dashboard",
@@ -169,7 +175,7 @@ impl Theme {
             border: Color::DarkGray,
         }
     }
-    
+
     /// Light theme
     pub fn light() -> Self {
         Self {
@@ -222,22 +228,25 @@ impl App {
                 priority: 2,
             },
         ];
-        
+
         let mut sync_states = HashMap::new();
         for remote in &remotes {
-            sync_states.insert(remote.name.clone(), SyncState {
-                remote: remote.name.clone(),
-                status: Status::Info,
-                last_sync: None,
-                last_push: None,
-                last_fetch: None,
-                progress: 0,
-                operation: "Idle".to_string(),
-                animation_frame: 0,
-                pulse_phase: 0.0,
-            });
+            sync_states.insert(
+                remote.name.clone(),
+                SyncState {
+                    remote: remote.name.clone(),
+                    status: Status::Info,
+                    last_sync: None,
+                    last_push: None,
+                    last_fetch: None,
+                    progress: 0,
+                    operation: "Idle".to_string(),
+                    animation_frame: 0,
+                    pulse_phase: 0.0,
+                },
+            );
         }
-        
+
         let mut app = Self {
             active_tab: Tab::Dashboard,
             config,
@@ -257,14 +266,14 @@ impl App {
             reduced_motion: false,
             screen_reader_mode: false,
         };
-        
+
         // Initialize list states
         app.remote_table_state.select(Some(0));
         app.conflict_list_state.select(Some(0));
-        
+
         Ok(app)
     }
-    
+
     /// Handle key event
     pub fn handle_key(&mut self, key: KeyEvent) {
         match key.code {
@@ -285,28 +294,30 @@ impl App {
             KeyCode::BackTab => {
                 let tabs = Tab::all();
                 let current_idx = tabs.iter().position(|&t| t == self.active_tab).unwrap_or(0);
-                let prev_idx = if current_idx == 0 { tabs.len() - 1 } else { current_idx - 1 };
+                let prev_idx = if current_idx == 0 {
+                    tabs.len() - 1
+                } else {
+                    current_idx - 1
+                };
                 self.active_tab = tabs[prev_idx];
             }
-            KeyCode::Up => {
-                match self.active_tab {
-                    Tab::Remotes => {
-                        if let Some(selected) = self.remote_table_state.selected() {
-                            if selected > 0 {
-                                self.remote_table_state.select(Some(selected - 1));
-                            }
+            KeyCode::Up => match self.active_tab {
+                Tab::Remotes => {
+                    if let Some(selected) = self.remote_table_state.selected() {
+                        if selected > 0 {
+                            self.remote_table_state.select(Some(selected - 1));
                         }
                     }
-                    Tab::Conflicts => {
-                        if let Some(selected) = self.conflict_list_state.selected() {
-                            if selected > 0 {
-                                self.conflict_list_state.select(Some(selected - 1));
-                            }
-                        }
-                    }
-                    _ => {}
                 }
-            }
+                Tab::Conflicts => {
+                    if let Some(selected) = self.conflict_list_state.selected() {
+                        if selected > 0 {
+                            self.conflict_list_state.select(Some(selected - 1));
+                        }
+                    }
+                }
+                _ => {}
+            },
             KeyCode::Down => {
                 match self.active_tab {
                     Tab::Remotes => {
@@ -318,7 +329,8 @@ impl App {
                     }
                     Tab::Conflicts => {
                         if let Some(selected) = self.conflict_list_state.selected() {
-                            if selected < 5 { // Placeholder conflict count
+                            if selected < 5 {
+                                // Placeholder conflict count
                                 self.conflict_list_state.select(Some(selected + 1));
                             }
                         }
@@ -398,7 +410,7 @@ impl App {
             _ => {}
         }
     }
-    
+
     /// Trigger sync for a remote
     fn trigger_sync(&mut self, remote_name: &str) {
         if let Some(state) = self.sync_states.get_mut(remote_name) {
@@ -407,7 +419,7 @@ impl App {
             state.progress = 0;
         }
         info!("Triggered sync for remote: {}", remote_name);
-        
+
         // Start sync if monitor is available
         if let Some(ref monitor) = self.sync_monitor {
             let monitor = monitor.clone();
@@ -419,18 +431,18 @@ impl App {
             });
         }
     }
-    
+
     /// Sync all remotes
     fn sync_all(&mut self) {
         info!("Triggering sync for all remotes");
-        
+
         // Update all states to show syncing
         for (_remote, state) in &mut self.sync_states {
             state.status = Status::Pending;
             state.operation = "Syncing...".to_string();
             state.progress = 0;
         }
-        
+
         // Start sync if monitor is available
         if let Some(ref monitor) = self.sync_monitor {
             let monitor = monitor.clone();
@@ -441,7 +453,7 @@ impl App {
             });
         }
     }
-    
+
     /// Resolve conflict
     fn resolve_conflict(&mut self) {
         info!("Opening conflict resolution");
@@ -452,14 +464,14 @@ impl App {
             state.operation = "Opening resolver...".to_string();
         }
     }
-    
+
     /// Refresh data
     fn refresh_data(&mut self) {
         self.last_update = Instant::now();
         info!("Refreshing TUI data");
         // This would reload config and sync states
     }
-    
+
     /// Update sync state
     pub fn update_sync_state(&mut self, remote: String, state: SyncState) {
         // Create new state with all required fields
@@ -476,21 +488,21 @@ impl App {
         };
         self.sync_states.insert(remote, new_state);
     }
-    
+
     /// Update animations
     fn update_animations(&mut self) {
         // Skip animations if reduced motion is enabled
         if self.reduced_motion {
             return;
         }
-        
+
         self.animation_frame = self.animation_frame.wrapping_add(1);
-        
+
         // Update transition progress
         if self.transition_progress < 1.0 {
             self.transition_progress = (self.transition_progress + 0.1).min(1.0);
         }
-        
+
         // Update sync state animations
         for state in self.sync_states.values_mut() {
             // Animate pulse phase for active operations
@@ -499,7 +511,7 @@ impl App {
             } else {
                 state.pulse_phase = 0.0;
             }
-            
+
             // Animate spinner for active operations
             if state.status == Status::Pending {
                 state.animation_frame = (state.animation_frame + 1) % 4;
@@ -508,7 +520,7 @@ impl App {
             }
         }
     }
-    
+
     /// Announce text to screen reader
     fn announce_to_screen_reader(&self, message: &str) {
         if self.screen_reader_mode {
@@ -517,7 +529,7 @@ impl App {
             eprintln!("SCREEN_READER: {}", message);
         }
     }
-    
+
     /// Get spinner character for animation
     fn get_spinner_char(frame: u8) -> &'static str {
         match frame {
@@ -528,33 +540,49 @@ impl App {
             _ => "⠋",
         }
     }
-    
+
     /// Get pulsing color for status
     fn get_pulsing_color(&self, base_color: Color, phase: f32) -> Color {
         if phase > 0.0 {
             // Simple pulse effect by cycling between colors
             let intensity = (phase.sin() + 1.0) / 2.0; // 0.0 to 1.0
             match base_color {
-                Color::Yellow => if intensity > 0.5 { Color::LightYellow } else { Color::Yellow },
-                Color::Blue => if intensity > 0.5 { Color::LightBlue } else { Color::Blue },
+                Color::Yellow => {
+                    if intensity > 0.5 {
+                        Color::LightYellow
+                    } else {
+                        Color::Yellow
+                    }
+                }
+                Color::Blue => {
+                    if intensity > 0.5 {
+                        Color::LightBlue
+                    } else {
+                        Color::Blue
+                    }
+                }
                 _ => base_color,
             }
         } else {
             base_color
         }
     }
-    
+
     /// Draw the UI
     pub fn draw(&mut self, f: &mut Frame) {
         let area = f.size();
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(3)])
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Min(0),
+                Constraint::Length(3),
+            ])
             .split(area);
-        
+
         // Draw tabs
         self.draw_tabs(f, chunks[0]);
-        
+
         // Draw main content
         if self.show_help {
             self.draw_help(f, chunks[1]);
@@ -567,11 +595,11 @@ impl App {
                 Tab::Help => self.draw_help(f, chunks[1]),
             }
         }
-        
+
         // Draw status bar
         self.draw_status_bar(f, chunks[2]);
     }
-    
+
     /// Draw tabs
     fn draw_tabs(&self, f: &mut Frame, area: Rect) {
         let tabs: Vec<Line> = Tab::all()
@@ -582,13 +610,12 @@ impl App {
                         .fg(self.theme.primary)
                         .add_modifier(Modifier::BOLD)
                 } else {
-                    Style::default()
-                        .fg(self.theme.foreground)
+                    Style::default().fg(self.theme.foreground)
                 };
                 Line::from(Span::styled(t.title(), style))
             })
             .collect();
-        
+
         let tabs_block = Tabs::new(tabs)
             .block(
                 Block::default()
@@ -603,34 +630,34 @@ impl App {
                     .add_modifier(Modifier::BOLD),
             )
             .divider(" | ");
-        
+
         f.render_widget(tabs_block, area);
     }
-    
+
     /// Draw dashboard
     fn draw_dashboard(&self, f: &mut Frame, area: Rect) {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(area);
-        
+
         // Left side - Overview
         self.draw_overview(f, chunks[0]);
-        
+
         // Right side - Recent activity
         self.draw_activity(f, chunks[1]);
     }
-    
+
     /// Draw overview panel
     fn draw_overview(&self, f: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(self.theme.border))
             .title("Overview");
-        
+
         let inner = block.inner(area);
         f.render_widget(block, area);
-        
+
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -640,119 +667,131 @@ impl App {
             ])
             .margin(1)
             .split(inner);
-        
+
         // Repository info
         let repo_info = Paragraph::new("Repository: /current/path\nBranch: main\nRemotes: 3")
             .style(Style::default().fg(self.theme.foreground));
         f.render_widget(repo_info, chunks[0]);
-        
+
         // Quick stats
         let stats = Paragraph::new("✅ Synced: 2 | ⚠️ Pending: 1 | ❌ Failed: 0")
             .style(Style::default().fg(self.theme.foreground));
         f.render_widget(stats, chunks[1]);
-        
+
         // Progress bars for active operations
         let progress_text = if self.sync_states.values().any(|s| s.progress > 0) {
             "Active sync operations..."
         } else {
             "No active operations"
         };
-        
+
         let progress = Paragraph::new(progress_text)
             .style(Style::default().fg(self.theme.foreground))
             .block(Block::default().borders(Borders::ALL).title("Activity"));
         f.render_widget(progress, chunks[2]);
     }
-    
+
     /// Draw activity panel
     fn draw_activity(&self, f: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(self.theme.border))
             .title("Recent Activity");
-        
+
         let inner = block.inner(area);
         f.render_widget(block, area);
-        
-        let activity_items: Vec<ListItem> = self.sync_states.values().map(|state| {
-            let icon = match state.status {
-                Status::Success => "✓",
-                Status::Error => "✗",
-                Status::Warning => "⚠",
-                Status::Pending => Self::get_spinner_char(state.animation_frame),
-                Status::Info => "ℹ",
-            };
-            
-            let color = self.get_pulsing_color(
-                match state.status {
-                    Status::Success => self.theme.success,
-                    Status::Error => self.theme.error,
-                    Status::Warning => self.theme.warning,
-                    Status::Pending => self.theme.primary,
-                    Status::Info => self.theme.secondary,
-                },
-                state.pulse_phase
-            );
-            
-            let time_ago = state.last_sync
-                .map(|t| format!("{}s ago", t.elapsed().as_secs()))
-                .unwrap_or_else(|| "Never".to_string());
-            
-            ListItem::new(format!(
-                "{} {} - {} ({})",
-                icon,
-                state.remote,
-                state.operation,
-                time_ago
-            )).style(Style::default().fg(color))
-        }).collect();
-        
+
+        let activity_items: Vec<ListItem> = self
+            .sync_states
+            .values()
+            .map(|state| {
+                let icon = match state.status {
+                    Status::Success => "✓",
+                    Status::Error => "✗",
+                    Status::Warning => "⚠",
+                    Status::Pending => Self::get_spinner_char(state.animation_frame),
+                    Status::Info => "ℹ",
+                };
+
+                let color = self.get_pulsing_color(
+                    match state.status {
+                        Status::Success => self.theme.success,
+                        Status::Error => self.theme.error,
+                        Status::Warning => self.theme.warning,
+                        Status::Pending => self.theme.primary,
+                        Status::Info => self.theme.secondary,
+                    },
+                    state.pulse_phase,
+                );
+
+                let time_ago = state
+                    .last_sync
+                    .map(|t| format!("{}s ago", t.elapsed().as_secs()))
+                    .unwrap_or_else(|| "Never".to_string());
+
+                ListItem::new(format!(
+                    "{} {} - {} ({})",
+                    icon, state.remote, state.operation, time_ago
+                ))
+                .style(Style::default().fg(color))
+            })
+            .collect();
+
         let list = List::new(activity_items)
             .block(Block::default().padding(ratatui::widgets::Padding::uniform(1)))
             .style(Style::default().fg(self.theme.foreground));
-        
+
         f.render_widget(list, inner);
     }
-    
+
     /// Draw remotes table
     fn draw_remotes(&mut self, f: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(self.theme.border))
             .title("Remotes (↑↓ to navigate, Enter to sync)");
-        
+
         let inner = block.inner(area);
         f.render_widget(block, area);
-        
-        let rows: Vec<Row> = self.remotes.iter().enumerate().map(|(i, remote)| {
-            let state = self.sync_states.entry(remote.name.clone()).or_insert_with(|| SyncState {
-                remote: remote.name.clone(),
-                status: Status::Info,
-                last_sync: None,
-                last_push: None,
-                last_fetch: None,
-                progress: 0,
-                operation: "Idle".to_string(),
-                animation_frame: 0,
-                pulse_phase: 0.0,
-            });
-            
-            let style = if self.remote_table_state.selected() == Some(i) {
-                Style::default()
-                    .fg(self.theme.primary)
-                    .add_modifier(Modifier::REVERSED)
-            } else {
-                Style::default().fg(self.theme.foreground)
-            };
-            
-            Row::new(vec![
-                remote.name.clone(),
-                format!("{:?}", state.status),
-                state.operation.clone(),
-                format!("{}%", state.progress),
-            ]).style(style)
-        }).collect();
-        
+
+        let rows: Vec<Row> = self
+            .remotes
+            .iter()
+            .enumerate()
+            .map(|(i, remote)| {
+                let state = self
+                    .sync_states
+                    .entry(remote.name.clone())
+                    .or_insert_with(|| SyncState {
+                        remote: remote.name.clone(),
+                        status: Status::Info,
+                        last_sync: None,
+                        last_push: None,
+                        last_fetch: None,
+                        progress: 0,
+                        operation: "Idle".to_string(),
+                        animation_frame: 0,
+                        pulse_phase: 0.0,
+                    });
+
+                let style = if self.remote_table_state.selected() == Some(i) {
+                    Style::default()
+                        .fg(self.theme.primary)
+                        .add_modifier(Modifier::REVERSED)
+                } else {
+                    Style::default().fg(self.theme.foreground)
+                };
+
+                Row::new(vec![
+                    remote.name.clone(),
+                    format!("{:?}", state.status),
+                    state.operation.clone(),
+                    format!("{}%", state.progress),
+                ])
+                .style(style)
+            })
+            .collect();
+
         let table = Table::new(
             rows,
             &[
@@ -770,53 +809,62 @@ impl App {
         ])
         .block(Block::default().padding(ratatui::widgets::Padding::uniform(1)))
         .style(Style::default().fg(self.theme.foreground));
-        
+
         f.render_widget(table, inner);
     }
-    
+
     /// Draw conflicts list
     fn draw_conflicts(&mut self, f: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(self.theme.border))
             .title("Conflicts (↑↓ to navigate, Enter to resolve)");
-        
+
         let inner = block.inner(area);
         f.render_widget(block, area);
-        
+
         let conflicts = vec![
             ListItem::new("🔥 main branch - GitHub vs GitLab"),
             ListItem::new("📄 README.md - Local modifications"),
             ListItem::new("📄 src/main.rs - Merge conflict"),
         ];
-        
+
         let list = List::new(conflicts)
             .block(Block::default().padding(ratatui::widgets::Padding::uniform(1)))
             .style(Style::default().fg(self.theme.foreground))
             .highlight_style(
                 Style::default()
                     .fg(self.theme.primary)
-                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::BOLD),
             );
-        
+
         f.render_stateful_widget(list, inner, &mut self.conflict_list_state);
     }
-    
+
     /// Draw settings panel
     fn draw_settings(&self, f: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(self.theme.border))
             .title("Settings");
-        
+
         let inner = block.inner(area);
         f.render_widget(block, area);
-        
+
         let settings_text = vec![
             Line::from("Theme: Press 't' to toggle"),
-            Line::from(format!("High Contrast: {} (Press 'c')", if self.high_contrast { "ON" } else { "OFF" })),
-            Line::from(format!("Reduced Motion: {} (Press 'm')", if self.reduced_motion { "ON" } else { "OFF" })),
-            Line::from(format!("Screen Reader: {} (Press F1)", if self.screen_reader_mode { "ON" } else { "OFF" })),
+            Line::from(format!(
+                "High Contrast: {} (Press 'c')",
+                if self.high_contrast { "ON" } else { "OFF" }
+            )),
+            Line::from(format!(
+                "Reduced Motion: {} (Press 'm')",
+                if self.reduced_motion { "ON" } else { "OFF" }
+            )),
+            Line::from(format!(
+                "Screen Reader: {} (Press F1)",
+                if self.screen_reader_mode { "ON" } else { "OFF" }
+            )),
             Line::from(""),
             Line::from("Auto-sync: Enabled"),
             Line::from("Max parallel: 4"),
@@ -827,24 +875,24 @@ impl App {
             Line::from("Press 'h' to toggle help"),
             Line::from("Press 'q' or Esc to quit"),
         ];
-        
+
         let settings = Paragraph::new(settings_text)
             .style(Style::default().fg(self.theme.foreground))
             .block(Block::default().padding(ratatui::widgets::Padding::uniform(1)));
-        
+
         f.render_widget(settings, inner);
     }
-    
+
     /// Draw help overlay
     fn draw_help(&self, f: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(self.theme.primary))
             .title("Help");
-        
+
         let inner = block.inner(area);
         f.render_widget(block, area);
-        
+
         let help_text = vec![
             Line::from("🎮 MultiGit TUI Keyboard Shortcuts"),
             Line::from(""),
@@ -870,32 +918,40 @@ impl App {
             Line::from("  Settings - Configure preferences"),
             Line::from("  Help - Show this help"),
         ];
-        
+
         let help = Paragraph::new(help_text)
             .style(Style::default().fg(self.theme.foreground))
             .block(Block::default().padding(ratatui::widgets::Padding::uniform(1)))
             .wrap(Wrap { trim: true });
-        
+
         f.render_widget(help, inner);
     }
-    
+
     /// Draw status bar
     fn draw_status_bar(&self, f: &mut Frame, area: Rect) {
         let status_text = format!(
             "Last update: {}s ago | Theme: {} | Remotes: {} | Press 'h' for help",
             self.last_update.elapsed().as_secs(),
-            if self.theme.background == Color::Black { "Dark" } else { "Light" },
+            if self.theme.background == Color::Black {
+                "Dark"
+            } else {
+                "Light"
+            },
             self.remotes.len()
         );
-        
+
         let status_bar = Paragraph::new(status_text)
-            .style(Style::default()
-                .fg(self.theme.foreground)
-                .bg(self.theme.background))
-            .block(Block::default()
-                .borders(Borders::TOP)
-                .border_style(Style::default().fg(self.theme.border)));
-        
+            .style(
+                Style::default()
+                    .fg(self.theme.foreground)
+                    .bg(self.theme.background),
+            )
+            .block(
+                Block::default()
+                    .borders(Borders::TOP)
+                    .border_style(Style::default().fg(self.theme.border)),
+            );
+
         f.render_widget(status_bar, area);
     }
 }
@@ -903,30 +959,30 @@ impl App {
 /// Run the TUI application
 pub async fn run_tui(config: Config) -> Result<()> {
     info!("Starting MultiGit TUI");
-    
+
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-    
+
     // Setup event handling
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-    
+
     // Create application
     let mut app = App::new(config.clone())?;
-    
+
     // Create and start sync monitor
     let sync_monitor = SyncMonitor::new(config, tx.clone())?;
     sync_monitor.start().await?;
     app.sync_monitor = Some(sync_monitor);
-    
+
     // Spawn event handler
     let event_tx = tx.clone();
     tokio::spawn(async move {
         let mut ticker = tokio::time::interval(Duration::from_millis(250));
-        
+
         loop {
             tokio::select! {
                 _ = ticker.tick() => {
@@ -952,7 +1008,7 @@ pub async fn run_tui(config: Config) -> Result<()> {
             }
         }
     });
-    
+
     // Main loop
     while app.running {
         // Handle events
@@ -971,19 +1027,19 @@ pub async fn run_tui(config: Config) -> Result<()> {
                 }
             }
         }
-        
+
         // Draw UI
         terminal.draw(|f| app.draw(f))?;
-        
+
         // Small delay to prevent high CPU usage
         tokio::time::sleep(Duration::from_millis(16)).await; // ~60 FPS
     }
-    
+
     // Stop sync monitor
     if let Some(ref monitor) = app.sync_monitor {
         monitor.stop();
     }
-    
+
     // Cleanup
     disable_raw_mode()?;
     execute!(
@@ -992,7 +1048,7 @@ pub async fn run_tui(config: Config) -> Result<()> {
         DisableMouseCapture
     )?;
     terminal.show_cursor()?;
-    
+
     info!("MultiGit TUI closed");
     Ok(())
 }

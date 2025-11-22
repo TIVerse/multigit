@@ -111,7 +111,7 @@ impl ConflictResolver {
     /// Create new conflict resolver
     pub fn new(config: Config) -> Result<Self> {
         let conflicts = Self::detect_conflicts()?;
-        
+
         Ok(Self {
             config,
             conflicts,
@@ -124,7 +124,7 @@ impl ConflictResolver {
             theme: crate::ui::tui::Theme::default(),
         })
     }
-    
+
     /// Detect conflicts in the repository
     fn detect_conflicts() -> Result<Vec<Conflict>> {
         // This would use git to detect actual conflicts
@@ -150,7 +150,7 @@ impl ConflictResolver {
             },
         ])
     }
-    
+
     /// Handle key event
     pub fn handle_key(&mut self, key: crossterm::event::KeyEvent) {
         match key.code {
@@ -166,7 +166,8 @@ impl ConflictResolver {
                     ViewMode::ConflictList => {
                         if self.selected_conflict > 0 {
                             self.selected_conflict -= 1;
-                            self.conflict_list_state.select(Some(self.selected_conflict));
+                            self.conflict_list_state
+                                .select(Some(self.selected_conflict));
                         }
                     }
                     ViewMode::ManualEditor => {
@@ -181,7 +182,8 @@ impl ConflictResolver {
                     ViewMode::ConflictList => {
                         if self.selected_conflict < self.conflicts.len().saturating_sub(1) {
                             self.selected_conflict += 1;
-                            self.conflict_list_state.select(Some(self.selected_conflict));
+                            self.conflict_list_state
+                                .select(Some(self.selected_conflict));
                         }
                     }
                     ViewMode::ManualEditor => {
@@ -235,7 +237,8 @@ impl ConflictResolver {
                 // Manual edit
                 if self.view_mode == ViewMode::DiffView {
                     self.view_mode = ViewMode::ManualEditor;
-                    self.manual_editor_content = self.get_current_conflict()
+                    self.manual_editor_content = self
+                        .get_current_conflict()
                         .map(|c| c.local_content.clone())
                         .unwrap_or_default();
                 }
@@ -262,13 +265,13 @@ impl ConflictResolver {
             _ => {}
         }
     }
-    
+
     /// Set resolution for current conflict
     fn set_resolution(&mut self, resolution: ResolutionChoice) {
         let current_content = self.manual_editor_content.clone();
         if let Some(conflict) = self.get_current_conflict_mut() {
             conflict.resolution = resolution.clone();
-            
+
             // Auto-resolve if not manual
             match resolution {
                 ResolutionChoice::Local => {
@@ -290,7 +293,7 @@ impl ConflictResolver {
             }
         }
     }
-    
+
     /// Apply current resolution
     fn apply_current_resolution(&mut self) {
         if let Some(conflict) = self.get_current_conflict() {
@@ -299,22 +302,23 @@ impl ConflictResolver {
                 // Move to next conflict
                 if self.selected_conflict < self.conflicts.len().saturating_sub(1) {
                     self.selected_conflict += 1;
-                    self.conflict_list_state.select(Some(self.selected_conflict));
+                    self.conflict_list_state
+                        .select(Some(self.selected_conflict));
                 }
             }
         }
     }
-    
+
     /// Get current conflict
     fn get_current_conflict(&self) -> Option<&Conflict> {
         self.conflicts.get(self.selected_conflict)
     }
-    
+
     /// Get current conflict as mutable
     fn get_current_conflict_mut(&mut self) -> Option<&mut Conflict> {
         self.conflicts.get_mut(self.selected_conflict)
     }
-    
+
     /// Move editor cursor up
     fn move_editor_cursor_up(&mut self) {
         let lines: Vec<&str> = self.manual_editor_content.lines().collect();
@@ -322,7 +326,7 @@ impl ConflictResolver {
             .lines()
             .count()
             .saturating_sub(1);
-        
+
         if current_line > 0 {
             // Find position of previous line
             let mut new_cursor = 0;
@@ -335,7 +339,7 @@ impl ConflictResolver {
             self.editor_cursor = new_cursor;
         }
     }
-    
+
     /// Move editor cursor down
     fn move_editor_cursor_down(&mut self) {
         let lines: Vec<&str> = self.manual_editor_content.lines().collect();
@@ -343,7 +347,7 @@ impl ConflictResolver {
             .lines()
             .count()
             .saturating_sub(1);
-        
+
         if current_line < lines.len().saturating_sub(1) {
             // Find position of next line
             let mut new_cursor = 0;
@@ -357,27 +361,27 @@ impl ConflictResolver {
             self.editor_cursor = new_cursor.min(self.manual_editor_content.len());
         }
     }
-    
+
     /// Move editor cursor left
     fn move_editor_cursor_left(&mut self) {
         if self.editor_cursor > 0 {
             self.editor_cursor -= 1;
         }
     }
-    
+
     /// Move editor cursor right
     fn move_editor_cursor_right(&mut self) {
         if self.editor_cursor < self.manual_editor_content.len() {
             self.editor_cursor += 1;
         }
     }
-    
+
     /// Insert character in editor
     fn insert_editor_char(&mut self, c: char) {
         self.manual_editor_content.insert(self.editor_cursor, c);
         self.editor_cursor += 1;
     }
-    
+
     /// Delete character in editor
     fn delete_editor_char(&mut self) {
         if self.editor_cursor > 0 {
@@ -385,32 +389,38 @@ impl ConflictResolver {
             self.editor_cursor -= 1;
         }
     }
-    
+
     /// Get all unresolved conflicts
     pub fn unresolved_conflicts(&self) -> usize {
-        self.conflicts.iter()
+        self.conflicts
+            .iter()
             .filter(|c| c.resolution == ResolutionChoice::Unresolved)
             .count()
     }
-    
+
     /// Get all resolved conflicts
     pub fn resolved_conflicts(&self) -> usize {
-        self.conflicts.iter()
+        self.conflicts
+            .iter()
             .filter(|c| c.resolution != ResolutionChoice::Unresolved)
             .count()
     }
-    
+
     /// Draw the UI
     pub fn draw(&mut self, f: &mut Frame) {
         let area = f.size();
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(3)])
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Min(0),
+                Constraint::Length(3),
+            ])
             .split(area);
-        
+
         // Draw title bar
         self.draw_title_bar(f, chunks[0]);
-        
+
         // Draw main content
         match self.view_mode {
             ViewMode::ConflictList => self.draw_conflict_list(f, chunks[1]),
@@ -418,131 +428,155 @@ impl ConflictResolver {
             ViewMode::ManualEditor => self.draw_manual_editor(f, chunks[1]),
             ViewMode::ResolutionPreview => self.draw_resolution_preview(f, chunks[1]),
         }
-        
+
         // Draw status bar
         self.draw_status_bar(f, chunks[2]);
     }
-    
+
     /// Draw title bar
     fn draw_title_bar(&self, f: &mut Frame, area: Rect) {
         let title = format!("Conflict Resolver - {} conflicts", self.conflicts.len());
         let title_bar = Paragraph::new(title)
-            .style(Style::default()
-                .fg(self.theme.foreground)
-                .bg(self.theme.background))
-            .block(Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(self.theme.border))
-                .title("MultiGit Conflict Resolution"));
-        
+            .style(
+                Style::default()
+                    .fg(self.theme.foreground)
+                    .bg(self.theme.background),
+            )
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(self.theme.border))
+                    .title("MultiGit Conflict Resolution"),
+            );
+
         f.render_widget(title_bar, area);
     }
-    
+
     /// Draw conflict list
     fn draw_conflict_list(&mut self, f: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(self.theme.border))
             .title("Conflicts (↑↓ to navigate, Enter to resolve)");
-        
+
         let inner = block.inner(area);
         f.render_widget(block, area);
-        
-        let conflict_items: Vec<ListItem> = self.conflicts.iter().enumerate().map(|(i, conflict)| {
-            let status = match conflict.resolution {
-                ResolutionChoice::Unresolved => "🔥",
-                ResolutionChoice::Local => "✓",
-                ResolutionChoice::Remote => "✓",
-                ResolutionChoice::Base => "✓",
-                ResolutionChoice::Manual => "✏️",
-            };
-            
-            let style = if i == self.selected_conflict {
-                Style::default()
-                    .fg(self.theme.primary)
-                    .add_modifier(Modifier::BOLD)
-            } else {
-                Style::default().fg(self.theme.foreground)
-            };
-            
-            ListItem::new(format!("{} {} - {:?}", status, conflict.file, conflict.resolution))
+
+        let conflict_items: Vec<ListItem> = self
+            .conflicts
+            .iter()
+            .enumerate()
+            .map(|(i, conflict)| {
+                let status = match conflict.resolution {
+                    ResolutionChoice::Unresolved => "🔥",
+                    ResolutionChoice::Local => "✓",
+                    ResolutionChoice::Remote => "✓",
+                    ResolutionChoice::Base => "✓",
+                    ResolutionChoice::Manual => "✏️",
+                };
+
+                let style = if i == self.selected_conflict {
+                    Style::default()
+                        .fg(self.theme.primary)
+                        .add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(self.theme.foreground)
+                };
+
+                ListItem::new(format!(
+                    "{} {} - {:?}",
+                    status, conflict.file, conflict.resolution
+                ))
                 .style(style)
-        }).collect();
-        
+            })
+            .collect();
+
         let list = List::new(conflict_items)
             .block(Block::default().padding(ratatui::widgets::Padding::uniform(1)))
             .style(Style::default().fg(self.theme.foreground))
             .highlight_style(
                 Style::default()
                     .fg(self.theme.primary)
-                    .add_modifier(Modifier::REVERSED)
+                    .add_modifier(Modifier::REVERSED),
             );
-        
+
         f.render_stateful_widget(list, inner, &mut self.conflict_list_state);
     }
-    
+
     /// Draw diff view
     fn draw_diff_view(&self, f: &mut Frame, area: Rect) {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(area);
-        
+
         // Left side - Local version
-        self.draw_version_panel(f, chunks[0], "Local (Press 1)", 
-            self.get_current_conflict().map(|c| c.local_content.as_str()).unwrap_or("No conflict selected"));
-        
+        self.draw_version_panel(
+            f,
+            chunks[0],
+            "Local (Press 1)",
+            self.get_current_conflict()
+                .map(|c| c.local_content.as_str())
+                .unwrap_or("No conflict selected"),
+        );
+
         // Right side - Remote version
-        self.draw_version_panel(f, chunks[1], "Remote (Press 2)", 
-            self.get_current_conflict().map(|c| c.remote_content.as_str()).unwrap_or("No conflict selected"));
+        self.draw_version_panel(
+            f,
+            chunks[1],
+            "Remote (Press 2)",
+            self.get_current_conflict()
+                .map(|c| c.remote_content.as_str())
+                .unwrap_or("No conflict selected"),
+        );
     }
-    
+
     /// Draw version panel
     fn draw_version_panel(&self, f: &mut Frame, area: Rect, title: &str, content: &str) {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(self.theme.border))
             .title(title);
-        
+
         let inner = block.inner(area);
         f.render_widget(block, area);
-        
+
         let paragraph = Paragraph::new(content)
             .style(Style::default().fg(self.theme.foreground))
             .block(Block::default().padding(ratatui::widgets::Padding::uniform(1)))
             .wrap(Wrap { trim: true });
-        
+
         f.render_widget(paragraph, inner);
     }
-    
+
     /// Draw manual editor
     fn draw_manual_editor(&self, f: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(self.theme.border))
             .title("Manual Editor (Esc to exit)");
-        
+
         let inner = block.inner(area);
         f.render_widget(block, area);
-        
+
         let paragraph = Paragraph::new(self.manual_editor_content.as_str())
             .style(Style::default().fg(self.theme.foreground))
             .block(Block::default().padding(ratatui::widgets::Padding::uniform(1)))
             .wrap(Wrap { trim: true });
-        
+
         f.render_widget(paragraph, inner);
     }
-    
+
     /// Draw resolution preview
     fn draw_resolution_preview(&self, f: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(self.theme.border))
             .title("Resolution Preview");
-        
+
         let inner = block.inner(area);
         f.render_widget(block, area);
-        
+
         let content = if let Some(conflict) = self.get_current_conflict() {
             match &conflict.resolved_content {
                 Some(resolved) => resolved.as_str(),
@@ -551,15 +585,15 @@ impl ConflictResolver {
         } else {
             "No conflict selected"
         };
-        
+
         let paragraph = Paragraph::new(content)
             .style(Style::default().fg(self.theme.foreground))
             .block(Block::default().padding(ratatui::widgets::Padding::uniform(1)))
             .wrap(Wrap { trim: true });
-        
+
         f.render_widget(paragraph, inner);
     }
-    
+
     /// Draw status bar
     fn draw_status_bar(&self, f: &mut Frame, area: Rect) {
         let status_text = format!(
@@ -568,22 +602,29 @@ impl ConflictResolver {
             self.resolved_conflicts(),
             self.view_mode
         );
-        
+
         let status_bar = Paragraph::new(status_text)
-            .style(Style::default()
-                .fg(self.theme.foreground)
-                .bg(self.theme.background))
-            .block(Block::default()
-                .borders(Borders::TOP)
-                .border_style(Style::default().fg(self.theme.border)));
-        
+            .style(
+                Style::default()
+                    .fg(self.theme.foreground)
+                    .bg(self.theme.background),
+            )
+            .block(
+                Block::default()
+                    .borders(Borders::TOP)
+                    .border_style(Style::default().fg(self.theme.border)),
+            );
+
         f.render_widget(status_bar, area);
     }
-    
+
     /// Apply all resolutions
     pub fn apply_all_resolutions(&self) -> Result<()> {
-        info!("Applying {} conflict resolutions", self.resolved_conflicts());
-        
+        info!(
+            "Applying {} conflict resolutions",
+            self.resolved_conflicts()
+        );
+
         for conflict in &self.conflicts {
             if conflict.resolution != ResolutionChoice::Unresolved {
                 if let Some(resolved_content) = &conflict.resolved_content {
@@ -593,7 +634,7 @@ impl ConflictResolver {
                 }
             }
         }
-        
+
         Ok(())
     }
 }
@@ -601,20 +642,20 @@ impl ConflictResolver {
 /// Run the conflict resolver
 pub async fn run_conflict_resolver(config: Config) -> Result<()> {
     info!("Starting conflict resolver");
-    
+
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-    
+
     // Create resolver
     let mut resolver = ConflictResolver::new(config)?;
-    
+
     // Setup event handling
     let (tx, mut rx) = mpsc::channel(100);
-    
+
     // Spawn event handler
     let event_tx = tx.clone();
     tokio::spawn(async move {
@@ -638,24 +679,24 @@ pub async fn run_conflict_resolver(config: Config) -> Result<()> {
             }
         }
     });
-    
+
     // Main loop
     while resolver.running {
         // Handle events
         while let Ok(key) = rx.try_recv() {
             resolver.handle_key(key);
         }
-        
+
         // Draw UI
         terminal.draw(|f| resolver.draw(f))?;
-        
+
         // Small delay to prevent high CPU usage
         tokio::time::sleep(Duration::from_millis(16)).await; // ~60 FPS
     }
-    
+
     // Apply resolutions
     resolver.apply_all_resolutions()?;
-    
+
     // Cleanup
     disable_raw_mode()?;
     execute!(
@@ -664,7 +705,7 @@ pub async fn run_conflict_resolver(config: Config) -> Result<()> {
         DisableMouseCapture
     )?;
     terminal.show_cursor()?;
-    
+
     info!("Conflict resolver closed");
     Ok(())
 }
