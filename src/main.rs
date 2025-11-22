@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use multigit::core::config::Config;
 use multigit::utils::logger::{init_logger, LogLevel, LoggerConfig};
 
 #[derive(Parser)]
@@ -251,6 +252,9 @@ enum Commands {
 
     /// Work session tracker
     Session,
+
+    /// Interactive TUI dashboard
+    Dashboard,
 
     /// Commit message templates
     Template,
@@ -684,6 +688,12 @@ fn main() -> Result<()> {
         Commands::Session => {
             use multigit::cli::commands::session;
             session::execute()?;
+        }
+
+        Commands::Dashboard => {
+            use multigit::ui::tui;
+            let config = Config::load().unwrap_or_default();
+            tui::start_dashboard(config)?;
         }
 
         Commands::Template => {
