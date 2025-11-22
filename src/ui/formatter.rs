@@ -264,6 +264,7 @@ pub fn print_section(text: &str, color_enabled: bool) {
 }
 
 /// Status indicator
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Status {
     /// Success status
     Success,
