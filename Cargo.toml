@@ -55,7 +55,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
 # TUI
-ratatui = "0.28"
+ratatui = "0.30"
 crossterm = "0.29"
 indicatif = "0.17"
 
