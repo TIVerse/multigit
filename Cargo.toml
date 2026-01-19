@@ -46,7 +46,7 @@ serde_json = "1.0"
 toml = "0.9"
 
 # Security
-keyring = "2.2"
+keyring = "3.6"
 age = "0.10"
 base64 = "0.21"
 
