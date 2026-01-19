@@ -48,7 +48,7 @@ toml = "0.9"
 # Security
 keyring = "2.2"
 age = "0.10"
-base64 = "0.21"
+base64 = "0.22"
 
 # Logging
 tracing = "0.1"
