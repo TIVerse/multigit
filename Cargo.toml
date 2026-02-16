@@ -61,8 +61,8 @@ indicatif = "0.17"
 
 # Utilities
 chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.19", features = ["v4", "serde"] }
-regex = "1.10"
+uuid = { version = "1.21", features = ["v4", "serde"] }
+regex = "1.12"
 url = "2.5"
 urlencoding = "2.1"
 dirs = "5.0"
@@ -74,9 +74,9 @@ nix = { version = "0.27", features = ["signal"] }
 
 [dev-dependencies]
 mockito = "1.7"
-tempfile = "3.24"
+tempfile = "3.25"
 assert_cmd = "2.1"
-predicates = "3.0"
+predicates = "3.1"
 pretty_assertions = "1.4"
 
 [profile.release]
