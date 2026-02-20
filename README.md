@@ -2,7 +2,6 @@
 
 # 🌐 MultiGit
 
-### **One repository. Infinite destinations.**
 
 [![GitHub release](https://img.shields.io/github/v/release/TIVerse/multigit?style=for-the-badge&logo=github)](https://github.com/TIVerse/multigit/releases)
 [![CI Status](https://img.shields.io/github/actions/workflow/status/TIVerse/multigit/test.yml?style=for-the-badge&logo=github-actions&label=Tests)](https://github.com/TIVerse/multigit/actions)
@@ -24,11 +23,11 @@
   Push, pull, and sync your code across GitHub, GitLab, Bitbucket, Codeberg, Gitea/Forgejo with a single command
 </p>
 
-**✨ Available as both `multigit` and `mg` commands for your convenience! ✨**
+** Available as both `multigit` and `mg` commands **
 
 <br/>
 
-**📖 Table of Contents**
+** Table of Contents**
 
 [Features](#-features) •
 [Why MultiGit?](#-why-multigit) •
@@ -52,118 +51,67 @@
 <tr>
 <td width="50%">
 
-### 🚀 Performance & Reliability
-- ⚡ **Blazingly Fast** - Parallel operations via Tokio async runtime
-- 🔄 **Smart Sync** - Incremental updates, not full clones
-- 📊 **Progress Tracking** - Real-time progress bars and status
-- 🛡️ **Atomic Operations** - All-or-nothing commits
-- 🔁 **Retry Logic** - Automatic retry on transient failures
+### Performance & Reliability
+-  **Blazingly Fast** - Parallel operations via Tokio async runtime
+-  **Smart Sync** - Incremental updates, not full clones
+-  **Progress Tracking** - Real-time progress bars and status
+-  **Atomic Operations** - All-or-nothing commits
+-  **Retry Logic** - Automatic retry on transient failures
 
 </td>
 <td width="50%">
 
-### 🔒 Security & Privacy
-- 🔐 **OS Keyring Integration** - Native credential managers
-- 🌐 **Host-Bound Credentials** - Tokens scoped to specific hosts
-- 🔒 **HTTPS Enforcement** - Prevents insecure HTTP connections
-- 🔑 **Age Encryption** - Encrypted credential fallback
-- 🚫 **Zero Plain Text** - No passwords or tokens in files
-- 📝 **Audit Logging** - Track all sensitive operations
-- 🛡️ **Secret Redaction** - Automatic log sanitization
-- 🔒 **TLS/SSL** - Encrypted network communication
+###  Security & Privacy
+-  **OS Keyring Integration** - Native credential managers
+-  **Host-Bound Credentials** - Tokens scoped to specific hosts
+-  **HTTPS Enforcement** - Prevents insecure HTTP connections
+-  **Age Encryption** - Encrypted credential fallback
+-  **Zero Plain Text** - No passwords or tokens in files
+-  **Audit Logging** - Track all sensitive operations
+-  **Secret Redaction** - Automatic log sanitization
+-  **TLS/SSL** - Encrypted network communication
 
 </td>
 </tr>
 <tr>
 <td>
 
-### 🎯 Intelligent Operations
-- 🧠 **Smart Conflict Detection** - Prevents data loss
-- 🔀 **Multiple Merge Strategies** - Fast-forward, rebase, merge
-- 🎯 **Selective Sync** - Choose branches, remotes, files
-- 🔍 **Health Checks** - Auto-diagnose and fix issues
-- 📈 **Diff Analysis** - See exactly what will sync
+###  Intelligent Operations
+-  **Smart Conflict Detection** - Prevents data loss
+-  **Multiple Merge Strategies** - Fast-forward, rebase, merge
+-  **Selective Sync** - Choose branches, remotes, files
+-  **Health Checks** - Auto-diagnose and fix issues
+-  **Diff Analysis** - See exactly what will sync
 
 </td>
 <td>
 
-### 🎨 Developer Experience
-- 💻 **Rich CLI/TUI** - Beautiful interactive terminal UI
-- ✨ **Conventional Commits** - Interactive commit wizard
-- 🤖 **Daemon Mode** - Background sync with scheduler
-- 🌍 **Cross-Platform** - Linux, macOS, Windows
-- 📚 **Zero Config** - Works out-of-the-box
+###  Developer Experience
+-  **Rich CLI/TUI** - Beautiful interactive terminal UI
+-  **Conventional Commits** - Interactive commit wizard
+-  **Daemon Mode** - Background sync with scheduler
+-  **Cross-Platform** - Linux, macOS, Windows
+-  **Zero Config** - Works out-of-the-box
 
 </td>
 </tr>
 </table>
 
-### 🌐 Supported Platforms
+###  Supported Platforms
 
 | Platform | Status | Features |
 |----------|--------|----------|
-| **GitHub** | ✅ Full Support | Public, Private, Enterprise |
-| **GitLab** | ✅ Full Support | Cloud, Self-hosted |
-| **Bitbucket** | ✅ Full Support | Cloud, Server |
-| **Codeberg** | ✅ Full Support | Public repositories |
-| **Gitea** | ✅ Full Support | Self-hosted instances |
-| **Forgejo** | ✅ Full Support | Self-hosted instances |
-
----
-
-## 💎 Why MultiGit?
-
-<table>
-<tr>
-<td width="33%" align="center">
-
-### ⚡️ Save Time
-**One command replaces dozens**
-
-Instead of:
-```bash
-git push origin main
-git push github main
-git push gitlab main
-git push backup main
-```
-
-Simply:
-```bash
-mg sync
-```
-
-</td>
-<td width="33%" align="center">
-
-### 🛡️ Stay Safe
-**Never lose your code**
-
-- Automatic conflict detection
-- Safe merge strategies
-- Encrypted credentials
-- Audit logging
-- Rollback support
-
-</td>
-<td width="33%" align="center">
-
-### 🚀 Work Smarter
-**Built for developers**
-
-- Zero configuration
-- Interactive wizards
-- Beautiful progress bars
-- Daemon mode
-- CI/CD ready
-
-</td>
-</tr>
+| **GitHub** |  Full Support | Public, Private, Enterprise |
+| **GitLab** |  Full Support | Cloud, Self-hosted |
+| **Bitbucket** |  Full Support | Cloud, Server |
+| **Codeberg** |  Full Support | Public repositories |
+| **Gitea** |  Full Support | Self-hosted instances |
+| **Forgejo** |  Full Support | Self-hosted instances |
 </table>
 
 <div align="center">
 
-### 🎯 Real-World Benefits
+###  Real-World Benefits
 
 | Traditional Workflow | With MultiGit | Time Saved |
 |---------------------|---------------|------------|
@@ -173,7 +121,7 @@ mg sync
 | Resolve conflicts manually | Interactive resolver | **~10 minutes** |
 | **Total per day** | | **~30 minutes** |
 
-**💰 That's 180+ hours saved per year for a typical developer!**
+** That's *180+* hours saved per year for a typical developer!**
 
 </div>
 
@@ -184,32 +132,31 @@ mg sync
 Get started in under 2 minutes! Here's the fastest path to multi-remote nirvana:
 
 ```bash
-# 1️⃣ Initialize MultiGit in your repository
+# 1️ Initialize MultiGit in your repository
 mg init                    # or 'multigit init'
 
-# 2️⃣ Add remote platforms (you'll be prompted for credentials)
+# 2️ Add remote platforms (you'll be prompted for credentials)
 mg remote add github <username>
 mg remote add gitlab <username>
 mg remote add bitbucket <username>
 
-# 3️⃣ Make some changes, then use the interactive commit helper
+# 3️ Make some changes, then use the interactive commit helper
 mg cc                      # Interactive conventional commit wizard
 # Or use traditional git commands - they work too!
 
-# 4️⃣ Sync to all remotes with one command! 🚀
+# 4️ Sync to all remotes with one command! 🚀
 mg sync
 
-# 5️⃣ Check sync status across all platforms
+# 5️ Check sync status across all platforms
 mg status
 ```
 
 <div align="center">
 
-**💡 Pro Tip**: Use `mg` for lightning-fast typing or `multigit` for scripts - they're 100% identical!
 
 </div>
 
-### 🎥 Demo
+###  Demo
 
 ```bash
 $ mg sync
